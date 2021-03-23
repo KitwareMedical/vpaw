@@ -153,6 +153,17 @@ set(Slicer_EXTENSION_SOURCE_DIRS
 #  )
 #list(APPEND Slicer_EXTENSION_SOURCE_DIRS ${${extension_name}_SOURCE_DIR})
 
+#SlicerMorph modules
+set(extension_name "SlicerMorph")
+set(${extension_name}_SOURCE_DIR "${CMAKE_BINARY_DIR}/${extension_name}")
+FetchContent_Populate(${extension_name}
+ SOURCE_DIR     ${${extension_name}_SOURCE_DIR}
+ GIT_REPOSITORY ${EP_GIT_PROTOCOL}://github.com/andinet/SlicerMorph.git
+ GIT_TAG        0ab0dfabdee835ccf1a4b256b092885622388e34
+ GIT_PROGRESS   1
+ QUIET
+ )
+list(APPEND Slicer_EXTENSION_SOURCE_DIRS ${${extension_name}_SOURCE_DIR})
 
 # Add Slicer sources
 add_subdirectory(${slicersources_SOURCE_DIR} ${slicersources_BINARY_DIR})
