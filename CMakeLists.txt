@@ -96,7 +96,7 @@ option(Slicer_BUILD_MULTIVOLUME_SUPPORT         "Build application with MultiVol
 option(Slicer_BUILD_PARAMETERSERIALIZER_SUPPORT "Build application with parameter serializer support" OFF)
 option(Slicer_USE_PYTHONQT                      "Build application with Python support"               ON)
 option(Slicer_USE_QtTesting                     "Build application with QtTesting support"            OFF)
-option(Slicer_USE_SimpleITK                     "Build application with SimpleITK support"            OFF)
+option(Slicer_USE_SimpleITK                     "Build application with SimpleITK support"            ON)
 
 option(Slicer_BUILD_BRAINSTOOLS                 "Build application with BRAINSTools module"           OFF)
 option(Slicer_BUILD_DataStore                   "Build application with DataStore module"             OFF)
@@ -153,6 +153,17 @@ set(Slicer_EXTENSION_SOURCE_DIRS
 #  )
 #list(APPEND Slicer_EXTENSION_SOURCE_DIRS ${${extension_name}_SOURCE_DIR})
 
+#SlicerMorph modules
+set(extension_name "SlicerMorph")
+set(${extension_name}_SOURCE_DIR "${CMAKE_BINARY_DIR}/${extension_name}")
+FetchContent_Populate(${extension_name}
+ SOURCE_DIR     ${${extension_name}_SOURCE_DIR}
+ GIT_REPOSITORY ${EP_GIT_PROTOCOL}://github.com/andinet/SlicerMorph.git
+ GIT_TAG        0ab0dfabdee835ccf1a4b256b092885622388e34
+ GIT_PROGRESS   1
+ QUIET
+ )
+list(APPEND Slicer_EXTENSION_SOURCE_DIRS ${${extension_name}_SOURCE_DIR})
 
 # Add Slicer sources
 add_subdirectory(${slicersources_SOURCE_DIR} ${slicersources_BINARY_DIR})
