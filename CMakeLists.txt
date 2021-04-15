@@ -165,5 +165,17 @@ FetchContent_Populate(${extension_name}
  )
 list(APPEND Slicer_EXTENSION_SOURCE_DIRS ${${extension_name}_SOURCE_DIR})
 
+#FlyThrough modules
+set(extension_name "FlyThrough")
+set(${extension_name}_SOURCE_DIR "${CMAKE_BINARY_DIR}/${extension_name}")
+FetchContent_Populate(${extension_name}
+ SOURCE_DIR     ${${extension_name}_SOURCE_DIR}
+ GIT_REPOSITORY ${EP_GIT_PROTOCOL}://github.com/andinet/FlyThrough.git
+ GIT_TAG        5761298cb1bfa602a86ba4fb6b0c29115e1b092a
+ GIT_PROGRESS   1
+ QUIET
+ )
+list(APPEND Slicer_EXTENSION_SOURCE_DIRS ${${extension_name}_SOURCE_DIR})
+
 # Add Slicer sources
 add_subdirectory(${slicersources_SOURCE_DIR} ${slicersources_BINARY_DIR})
