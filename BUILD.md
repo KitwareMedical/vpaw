@@ -4,9 +4,12 @@ Build and Package vpaw
 This document summarizes how to build and package vpaw on Windows. Instructions for Linux and macOS are similar.
 For more details, see [3D Slicer Developer Wiki](http://wiki.slicer.org/slicerWiki/index.php/Documentation/Nightly/Developers)
 
-Prerequisites 
--------------
+vpaw is a custom Slicer application. Reading the [3D Slicer Developer Documentation](https://slicer.readthedocs.io/en/latest/developer_guide/index.html) may help answer additional questions.
 
+The initial source files were created using [KitwareMedical/SlicerCustomAppTemplate](https://github.com/KitwareMedical/SlicerCustomAppTemplate).
+
+Prerequisites
+-------------
 * Microsoft Windows 7 or above recommended
 
 * Supported Microsoft Visual Studio versions:
@@ -41,7 +44,7 @@ Checkout
 cd /c
 mkdir W
 cd /c/W
-git clone https://github.com/Kitware/vpaw.git vpaw
+git clone https://github.com/Kitware/vpaw.git v
 ```
 
 Note: use short source and build directory names to avoid the [maximum path length limitation](http://msdn.microsoft.com/en-us/library/windows/desktop/aa365247%28v=vs.85%29.aspx#maxpath).
@@ -52,22 +55,22 @@ Note: The build process will take approximately 3 hours.
 
 <b>Option 1: CMake GUI and Visual Studio (Recommended)</b>
 
-1. Start [CMake GUI](https://cmake.org/runningcmake/), select source directory `C:\W\vpaw` and set build directory to `C:\W\vpaw-rel`.
+1. Start [CMake GUI](https://cmake.org/runningcmake/), select source directory `C:\W\v` and set build directory to `C:\W\vR`.
 2. Add an entry `Qt5_DIR` pointing to `C:/Qt/${QT_VERSION}/${COMPILER}/lib/cmake/Qt5`.
 2. Generate the project.
-3. Open `C:\W\vpaw-rel\vpaw.sln`, select `Release` and build the project.
+3. Open `C:\W\vR\vpaw.sln`, select `Release` and build the project.
 
 <b>Option 2: Command Line</b>
 
 1. Start the [Command Line Prompt](http://windows.microsoft.com/en-us/windows/command-prompt-faq)
-2. Configure and build the project in `C:\W\vpaw-rel` by typing the following commands:
+2. Configure and build the project in `C:\W\vR` by typing the following commands:
 
 ```bat
 cd C:\W\
-mkdir vpaw-rel
-cd vpaw-rel
-cmake -G "Visual Studio 14 2015 Win64" -DQt5_DIR:PATH=`C:/Qt/${QT_VERSION}/${COMPILER}/lib/cmake/Qt5 ..\vpaw
-cmake --build . --config Release
+mkdir vR
+cd vR
+cmake -G "Visual Studio 16 2019" -A x64 -DQt5_DIR:PATH=`C:/Qt/${QT_VERSION}/${COMPILER}/lib/cmake/Qt5 ..\v
+cmake --build . --config Release -- /maxcpucount:4
 ```
 
 Package
@@ -77,7 +80,7 @@ Install [NSIS 2](http://sourceforge.net/projects/nsis/files/)
 
 <b>Option 1: CMake and Visual Studio (Recommended)</b>
 
-1. In the `C:\W\vpaw-rel\Slicer-build` directory, open `Slicer.sln` and build the `PACKAGE` target
+1. In the `C:\W\vR\Slicer-build` directory, open `Slicer.sln` and build the `PACKAGE` target
 
 <b>Option 2: Command Line</b>
 
@@ -85,7 +88,7 @@ Install [NSIS 2](http://sourceforge.net/projects/nsis/files/)
 2. Build the `PACKAGE` target by typing the following commands:
 
 ```bat
-cd C:\W\vpaw-rel\Slicer-build
+cd C:\W\vR\Slicer-build
 cmake --build . --config Release --target PACKAGE
 ```
 
