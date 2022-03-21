@@ -1,19 +1,21 @@
-cmake_minimum_required(VERSION 3.13.4)
+cmake_minimum_required(VERSION 3.16.3)
 
-# Enable C++11
+# Enable C++14
 if(NOT DEFINED CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 11)
+  set(CMAKE_CXX_STANDARD 14)
 endif()
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+
+set (EP_GIT_PROTOCOL "https")
 
 # Slicer sources
 include(FetchContent)
 if(NOT DEFINED slicersources_SOURCE_DIR)
   # Download Slicer sources and set variables slicersources_SOURCE_DIR and slicersources_BINARY_DIR
   FetchContent_Populate(slicersources
-    GIT_REPOSITORY git://github.com/Slicer/Slicer
-    GIT_TAG        b22191e1067d813302efbd72f1608bcf97e6c7f8
+    GIT_REPOSITORY ${EP_GIT_PROTOCOL}://github.com/Slicer/Slicer
+    GIT_TAG        acc618074341f5edae7cfbbab8a9e2afd55c81cf
     GIT_PROGRESS   1
     )
 else()
@@ -47,7 +49,7 @@ include(ExternalProjectDependency)
 set(Slicer_ADDITIONAL_DEPENDENCIES
   )
 
-#  Enable listed remote modules from ITK 
+#  Enable listed remote modules from ITK
 set(Slicer_ITK_ADDITIONAL_MODULES
   )
 
@@ -86,7 +88,8 @@ endif()
 option(BUILD_TESTING                            "Build application test suite"                        ON)
 option(Slicer_BUILD_DOCUMENTATION               "Build documentation (Doxygen, sphinx, ...)"          OFF)
 if(WIN32)
-  option(Slicer_BUILD_WIN32_CONSOLE             "Build application executable as a console app"       OFF)
+  option(Slicer_BUILD_WIN32_CONSOLE_LAUNCHER    "Build ${PROJECT_NAME} launcher executable as a console app on windows (displays console at application start)" OFF)
+  option(Slicer_BUILD_WIN32_CONSOLE             "Build application executable as a console app (allows capturing and piping console output)" ON)
 endif()
 
 option(Slicer_BUILD_DICOM_SUPPORT               "Build application with DICOM support"                ON)
@@ -96,7 +99,7 @@ option(Slicer_BUILD_MULTIVOLUME_SUPPORT         "Build application with MultiVol
 option(Slicer_BUILD_PARAMETERSERIALIZER_SUPPORT "Build application with parameter serializer support" OFF)
 option(Slicer_USE_PYTHONQT                      "Build application with Python support"               ON)
 option(Slicer_USE_QtTesting                     "Build application with QtTesting support"            OFF)
-option(Slicer_USE_SimpleITK                     "Build application with SimpleITK support"            ON)
+option(Slicer_USE_SimpleITK                     "Build application with SimpleITK support"            OFF)
 
 option(Slicer_BUILD_BRAINSTOOLS                 "Build application with BRAINSTools module"           OFF)
 option(Slicer_BUILD_DataStore                   "Build application with DataStore module"             OFF)
@@ -136,7 +139,7 @@ set(Slicer_QTSCRIPTEDMODULES_DISABLED
 set(Slicer_EXTENSION_SOURCE_DIRS
   #${vpaw_SOURCE_DIR}/Modules/CLI/MyCLIModule
   #${vpaw_SOURCE_DIR}/Modules/Loadable/MyLoadableModule
-  #${vpaw_SOURCE_DIR}/Modules/Scripted/MyScriptedModule
+  #${vpaw_SOURCE_DIR}/Modules/Scripted/Home
   )
 
 # Add remote extension source directories

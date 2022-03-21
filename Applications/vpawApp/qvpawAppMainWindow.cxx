@@ -21,6 +21,7 @@
 
 // Qt includes
 #include <QDesktopWidget>
+#include <QLabel>
 
 // Slicer includes
 #include "qSlicerApplication.h"
@@ -44,6 +45,9 @@ qvpawAppMainWindowPrivate::~qvpawAppMainWindowPrivate()
 //-----------------------------------------------------------------------------
 void qvpawAppMainWindowPrivate::init()
 {
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 7, 0))
+  QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
+#endif
   Q_Q(qvpawAppMainWindow);
   this->Superclass::init();
 }
@@ -74,12 +78,10 @@ void qvpawAppMainWindowPrivate::setupUi(QMainWindow * mainWindow)
   //----------------------------------------------------------------------------
   mainWindow->setWindowIcon(QIcon(":/Icons/Medium/DesktopIcon.png"));
 
-  QPixmap logo(":/LogoFull.png");
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 0, 0))
-  qreal dpr = sqrt(qApp->desktop()->logicalDpiX()*qreal(qApp->desktop()->logicalDpiY()) / (qApp->desktop()->physicalDpiX()*qApp->desktop()->physicalDpiY()));
-  logo.setDevicePixelRatio(dpr);
-#endif
-  this->LogoLabel->setPixmap(logo);
+  QLabel* logoLabel = new QLabel();
+  logoLabel->setObjectName("LogoLabel");
+  logoLabel->setPixmap(qMRMLWidget::pixmapFromIcon(QIcon(":/LogoFull.png")));
+  this->PanelDockWidget->setTitleBarWidget(logoLabel);
 
   // Hide the toolbars
   this->MainToolBar->setVisible(false);
