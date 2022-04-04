@@ -1,5 +1,6 @@
-vpaw by Kitware, Inc.
-================================
+VPAW by Kitware, Inc.
+=====================
+
 A Virtual Pediatric Airways Workbench (VPAW) is a patient-centered surgical planning software system targeted to pediatric patients with airway obstruction.
 
 ## Overview
