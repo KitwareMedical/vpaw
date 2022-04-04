@@ -11,9 +11,11 @@ The project is being actively developed and our plan is to implement the followi
 A typical workflow will consist of the following steps:
 
 * Importing DICOM images (will initially support CT data)
-* Segmenting the airway (as described by _Hong et al_ in section 2.1 of [1])
+* Segmenting the airway (as described by _Hong et al_ [^1])
 * Interactive 3D editing of airway geometries leveraging integration of 3D pointing devices such as [3D Systems Touch](https://www.3dsystems.com/haptics-devices/touch) through the OpenHaptics interface
 * Creating input files for offline geometric analysis and CFD simulations
+
+[^1]: See section 2.1 of Hong, Yi, et al. "A pediatric airway atlas and its application in subglottic stenosis." 2013 Ieee 10th International Symposium on Biomedical Imaging. IEEE, 2013.
 
 ## Maintainers
 
@@ -36,6 +38,3 @@ This software is licensed under the terms of the [Apache License Version 2.0](LI
 
 Quammen, C. W., Taylor, R. M., 2nd, Krajcevski, P., Mitran, S., Enquobahrie, A., Superfine, R., Davis, B., Davis, S., & Zdanski, C. (2016). The Virtual Pediatric Airways Workbench. Studies in health technology and informatics, 220, 295–300.\
 See https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5588666/
-
-## References
-[1] Hong, Yi, et al. "A pediatric airway atlas and its application in subglottic stenosis." 2013 Ieee 10th International Symposium on Biomedical Imaging. IEEE, 2013.
