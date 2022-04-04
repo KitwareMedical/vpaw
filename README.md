@@ -22,7 +22,7 @@ A typical workflow will consist of the following steps:
 * Interactive 3D editing of airway geometries leveraging integration of 3D pointing devices such as [3D Systems Touch](https://www.3dsystems.com/haptics-devices/touch) through the OpenHaptics interface
 * Creating input files for offline geometric analysis and CFD simulations
 
-[^1]: See section 2.1 of Hong, Yi, et al. "A pediatric airway atlas and its application in subglottic stenosis." 2013 Ieee 10th International Symposium on Biomedical Imaging. IEEE, 2013.
+[^1]: See section 2.1 of Hong, Yi, et al. "A pediatric airway atlas and its application in subglottic stenosis." 2013 Ieee 10th International Symposium on Biomedical Imaging. IEEE, 2013. Link: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4769591/
 
 ## Maintainers
 
