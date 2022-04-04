@@ -33,6 +33,8 @@ A typical workflow will consist of the following steps:
 
 The initial version of this project was developed between 2010 and 2015 in the context of supporting predictive modeling for treatment of upper airway obstruction in young children, the project as well as the team involved are respectively described and acknowledged in the [referenced](#how-to-cite) publication.
 
+In 2022, the development of the next generation of VPAW based on [3D Slicer](https://www.slicer.org) was initiated.
+
 ## Acknowledgment
 
 We gratefully acknowledge support from National Heart, Lung, and Blood Institute (NIH/NHLBI grant nos: 5R01HL105241 and 5R01HL154429 ), and National Health Institute of Dental and Craniofacial Research (NIH/NHIDC grant no: R43DE024334).
