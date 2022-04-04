@@ -1,6 +1,12 @@
 vpaw by Kitware, Inc.
 ================================
-A Virtual Pediatric Airways Workbench (VPAW) is a patient-centered surgical planning software system targeted to pediatric patients with airway obstruction. VPAW enables a  full surgical planning pipeline, which includes: importing DICOM images, segmenting the airway, interactive 3D editing of airway geometries to express potential surgical treatment planning options, and creating input files for offline geometric analysis and computationalfluid dynamics simulations for evaluation of surgical outcomes.  This repository contains a new generation of VPAW that is developed using [3D Slicer](https://www.slicer.org/).
+A Virtual Pediatric Airways Workbench (VPAW) is a patient-centered surgical planning software system targeted to pediatric patients with airway obstruction.
+
+## Overview
+
+VPAW enables a  full surgical planning pipeline, which includes: importing DICOM images, segmenting the airway, interactive 3D editing of airway geometries to express potential surgical treatment planning options, and creating input files for offline geometric analysis and computationalfluid dynamics simulations for evaluation of surgical outcomes.
+
+This repository contains a new generation of VPAW that is developed using [3D Slicer](https://www.slicer.org/).
 
 _This project is in active development and may change from version to version without notice._
 
