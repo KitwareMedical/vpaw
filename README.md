@@ -15,19 +15,6 @@ A typical workflow will consist of the following steps:
 * Interactive 3D editing of airway geometries leveraging integration of 3D pointing devices such as [3D Systems Touch](https://www.3dsystems.com/haptics-devices/touch) through the OpenHaptics interface
 * Creating input files for offline geometric analysis and CFD simulations
 
-## Table of content
-
-- [vpaw by Kitware, Inc.](#vpaw-by-kitware-inc)
-  - [Features](#features)
-  - [Table of content](#table-of-content)
-  - [Maintainers](#maintainers)
-  - [History](#history)
-  - [Acknowledgment](#acknowledgment)
-  - [License](#license)
-  - [How to cite ?](#how-to-cite-)
-  - [References](#references)
-
-
 ## Maintainers
 
 * [Contributing](CONTRIBUTING.md)
