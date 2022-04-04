@@ -33,9 +33,6 @@ A typical workflow will consist of the following steps:
 * [Contributing](CONTRIBUTING.md)
 * [Building](BUILD.md)
 
-
-![vpaw by Kitware, Inc.](Applications/vpawApp/Resources/Images/LogoFull.png?raw=true)
-
 ## History
 
 The initial version of this project was developed between 2010 and 2015 in the context of supporting predictive modeling for treatment of upper airway obstruction in young children, the project as well as the team involved are respectively described and acknowledged in the [referenced](#how-to-cite) publication.
