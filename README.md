@@ -17,7 +17,7 @@ The project is being actively developed and our plan is to implement the followi
 
 A typical workflow will consist of the following steps:
 
-* Importing DICOM images (will initially support CT data)
+* Importing computed tomography (CT) DICOM images
 * Segmenting the airway (as described by _Hong et al_ [^1])
 * Interactive 3D editing of airway geometries leveraging integration of 3D pointing devices such as [3D Systems Touch](https://www.3dsystems.com/haptics-devices/touch) through the OpenHaptics interface
 * Creating input files for offline geometric analysis and CFD simulations
