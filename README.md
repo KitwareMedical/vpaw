@@ -22,6 +22,7 @@ A typical workflow will consist of the following steps:
   - [Table of content](#table-of-content)
   - [Maintainers](#maintainers)
   - [History](#history)
+  - [Acknowledgment](#acknowledgment)
   - [License](#license)
   - [How to cite ?](#how-to-cite-)
   - [References](#references)
@@ -38,6 +39,10 @@ A typical workflow will consist of the following steps:
 ## History
 
 The initial version of this project was developed between 2010 and 2015 in the context of supporting predictive modeling for treatment of upper airway obstruction in young children, the project as well as the team involved are respectively described and acknowledged in the [referenced](#how-to-cite) publication.
+
+## Acknowledgment
+
+We gratefully acknowledge support from National Heart, Lung, and Blood Institute (NIH/NHLBI grant no: 5R01HL105241), and National Health Institute of Dental and Craniofacial Research (NIH/NHIDC grant no: R43DE024334).
 
 ## License
 
