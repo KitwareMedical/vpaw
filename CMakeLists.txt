@@ -15,7 +15,7 @@ if(NOT DEFINED slicersources_SOURCE_DIR)
   # Download Slicer sources and set variables slicersources_SOURCE_DIR and slicersources_BINARY_DIR
   FetchContent_Populate(slicersources
     GIT_REPOSITORY ${EP_GIT_PROTOCOL}://github.com/Slicer/Slicer
-    GIT_TAG        acc618074341f5edae7cfbbab8a9e2afd55c81cf
+    GIT_TAG        955326ccbd0a7855a776a4da9d458f24fc2306f3  # Oct 27, 2021
     GIT_PROGRESS   1
     )
 else()
@@ -179,6 +179,21 @@ FetchContent_Populate(${extension_name}
  QUIET
  )
 list(APPEND Slicer_EXTENSION_SOURCE_DIRS ${${extension_name}_SOURCE_DIR})
+
+#SlicerIMSTK
+set(extension_name "SlicerIMSTK")
+set(${extension_name}_SOURCE_DIR "${CMAKE_BINARY_DIR}/${extension_name}")
+FetchContent_Populate(${extension_name}
+ SOURCE_DIR     ${${extension_name}_SOURCE_DIR}
+ GIT_REPOSITORY ${EP_GIT_PROTOCOL}://github.com/KitwareMedical/SlicerIMSTK.git
+ GIT_TAG        bf910e42c9b98bd94678f496a3212c2f2432b785
+ GIT_PROGRESS   1
+ QUIET
+ )
+message(STATUS "Remote - ${extension_name} [OK]")
+list(APPEND Slicer_EXTENSION_SOURCE_DIRS ${${extension_name}_SOURCE_DIR})
+
+include(${SlicerIMSTK_SOURCE_DIR}/SuperBuildPrerequisites.cmake)
 
 # Add Slicer sources
 add_subdirectory(${slicersources_SOURCE_DIR} ${slicersources_BINARY_DIR})
