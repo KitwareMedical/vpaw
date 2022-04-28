@@ -99,7 +99,7 @@ option(Slicer_BUILD_MULTIVOLUME_SUPPORT         "Build application with MultiVol
 option(Slicer_BUILD_PARAMETERSERIALIZER_SUPPORT "Build application with parameter serializer support" OFF)
 option(Slicer_USE_PYTHONQT                      "Build application with Python support"               ON)
 option(Slicer_USE_QtTesting                     "Build application with QtTesting support"            OFF)
-option(Slicer_USE_SimpleITK                     "Build application with SimpleITK support"            OFF)
+option(Slicer_USE_SimpleITK                     "Build application with SimpleITK support"            ON)
 
 option(Slicer_BUILD_BRAINSTOOLS                 "Build application with BRAINSTools module"           OFF)
 option(Slicer_BUILD_DataStore                   "Build application with DataStore module"             OFF)
@@ -131,7 +131,6 @@ set(Slicer_QTSCRIPTEDMODULES_DISABLED
   Endoscopy
   LabelStatistics
   PerformanceTests
-  SampleData
   VectorToScalarVolume
   )
 
