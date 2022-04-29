@@ -14,6 +14,8 @@
   and was partially funded by NIH grant 3P41RR013218-12S1
 
 ==============================================================================*/
+// Qt includes
+#include <QFile>
 
 // vpaw includes
 #include "qvpawAppMainWindow.h"
@@ -22,6 +24,12 @@
 // Slicer includes
 #include "qSlicerApplication.h"
 #include "qSlicerApplicationHelper.h"
+#include "vtkMRMLLinearTransformNode.h"
+#include "vtkMRMLModelNode.h"
+#include "vtkMRMLScene.h"
+
+// VTK Includes
+#include "vtkPLYReader.h"
 
 namespace
 {
@@ -49,6 +57,32 @@ int SlicerAppMain(int argc, char* argv[])
     {
     QString windowTitle = QString("%1 %2").arg(Slicer_MAIN_PROJECT_APPLICATION_NAME).arg(Slicer_MAIN_PROJECT_VERSION_FULL);
     window->setWindowTitle(windowTitle);
+    }
+
+  // Load default haptic probe model from resource file.
+  QFile file(":/cylinder.ply");
+  if (file.open(QIODevice::ReadOnly) && app.mrmlScene())
+    {
+    auto bytes = file.readAll();
+
+    vtkNew<vtkPLYReader> reader;
+    reader->SetInputString(bytes.toStdString());
+    reader->ReadFromInputStringOn();
+    reader->Update();
+
+     if (reader->GetErrorCode() == 0)
+       {
+       vtkNew<vtkMRMLModelNode> hapticProbe;
+       hapticProbe->SetName("Model: Haptic Probe");
+       app.mrmlScene()->AddNode(hapticProbe);
+       hapticProbe->SetAndObserveMesh(reader->GetOutput());
+
+       vtkNew<vtkMRMLLinearTransformNode> transformNode;
+       transformNode->SetName("Transform: Haptic Probe");
+       app.mrmlScene()->AddNode(transformNode);
+       hapticProbe->SetAndObserveTransformNodeID(transformNode->GetID());
+       hapticProbe->SetDisplayVisibility(true);
+       }
     }
 
   return app.exec();
