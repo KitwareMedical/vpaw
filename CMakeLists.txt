@@ -13,7 +13,7 @@ if(NOT DEFINED slicersources_SOURCE_DIR)
   # Download Slicer sources and set variables slicersources_SOURCE_DIR and slicersources_BINARY_DIR
   FetchContent_Populate(slicersources
     GIT_REPOSITORY https://github.com/Slicer/Slicer
-    GIT_TAG        955326ccbd0a7855a776a4da9d458f24fc2306f3  # Oct 27, 2021
+    GIT_TAG        177f3b324247de4e77d4497cc9121fe37dd5b3f3  # June 1, 2022
     GIT_PROGRESS   1
     )
 else()
@@ -183,7 +183,7 @@ set(${extension_name}_SOURCE_DIR "${CMAKE_BINARY_DIR}/${extension_name}")
 FetchContent_Populate(${extension_name}
  SOURCE_DIR     ${${extension_name}_SOURCE_DIR}
  GIT_REPOSITORY https://github.com/KitwareMedical/SlicerIMSTK.git
- GIT_TAG        bf910e42c9b98bd94678f496a3212c2f2432b785
+ GIT_TAG        2d9d695c6c848a4f48e1eb5e21cd0389289ccc19
  GIT_PROGRESS   1
  QUIET
  )
