@@ -7,14 +7,12 @@ endif()
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-set (EP_GIT_PROTOCOL "https")
-
 # Slicer sources
 include(FetchContent)
 if(NOT DEFINED slicersources_SOURCE_DIR)
   # Download Slicer sources and set variables slicersources_SOURCE_DIR and slicersources_BINARY_DIR
   FetchContent_Populate(slicersources
-    GIT_REPOSITORY ${EP_GIT_PROTOCOL}://github.com/Slicer/Slicer
+    GIT_REPOSITORY https://github.com/Slicer/Slicer
     GIT_TAG        955326ccbd0a7855a776a4da9d458f24fc2306f3  # Oct 27, 2021
     GIT_PROGRESS   1
     )
@@ -148,7 +146,7 @@ set(Slicer_EXTENSION_SOURCE_DIRS
 #set(${extension_name}_SOURCE_DIR "${CMAKE_BINARY_DIR}/${extension_name}")
 #FetchContent_Populate(${extension_name}
 #  SOURCE_DIR     ${${extension_name}_SOURCE_DIR}
-#  GIT_REPOSITORY ${EP_GIT_PROTOCOL}://github.com/openigtlink/SlicerOpenIGTLink.git
+#  GIT_REPOSITORY https://github.com/openigtlink/SlicerOpenIGTLink.git
 #  GIT_TAG        2b92f7b1ffe02403109b671f28424e8770e902a0
 #  GIT_PROGRESS   1
 #  QUIET
@@ -160,7 +158,7 @@ set(extension_name "SlicerMorph")
 set(${extension_name}_SOURCE_DIR "${CMAKE_BINARY_DIR}/${extension_name}")
 FetchContent_Populate(${extension_name}
  SOURCE_DIR     ${${extension_name}_SOURCE_DIR}
- GIT_REPOSITORY ${EP_GIT_PROTOCOL}://github.com/andinet/SlicerMorph.git
+ GIT_REPOSITORY https://github.com/andinet/SlicerMorph.git
  GIT_TAG        0ab0dfabdee835ccf1a4b256b092885622388e34
  GIT_PROGRESS   1
  QUIET
@@ -172,7 +170,7 @@ set(extension_name "FlyThrough")
 set(${extension_name}_SOURCE_DIR "${CMAKE_BINARY_DIR}/${extension_name}")
 FetchContent_Populate(${extension_name}
  SOURCE_DIR     ${${extension_name}_SOURCE_DIR}
- GIT_REPOSITORY ${EP_GIT_PROTOCOL}://github.com/andinet/FlyThrough.git
+ GIT_REPOSITORY https://github.com/andinet/FlyThrough.git
  GIT_TAG        5761298cb1bfa602a86ba4fb6b0c29115e1b092a
  GIT_PROGRESS   1
  QUIET
@@ -184,7 +182,7 @@ set(extension_name "SlicerIMSTK")
 set(${extension_name}_SOURCE_DIR "${CMAKE_BINARY_DIR}/${extension_name}")
 FetchContent_Populate(${extension_name}
  SOURCE_DIR     ${${extension_name}_SOURCE_DIR}
- GIT_REPOSITORY ${EP_GIT_PROTOCOL}://github.com/KitwareMedical/SlicerIMSTK.git
+ GIT_REPOSITORY https://github.com/KitwareMedical/SlicerIMSTK.git
  GIT_TAG        bf910e42c9b98bd94678f496a3212c2f2432b785
  GIT_PROGRESS   1
  QUIET
