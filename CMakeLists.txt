@@ -183,7 +183,7 @@ set(${extension_name}_SOURCE_DIR "${CMAKE_BINARY_DIR}/${extension_name}")
 FetchContent_Populate(${extension_name}
  SOURCE_DIR     ${${extension_name}_SOURCE_DIR}
  GIT_REPOSITORY https://github.com/KitwareMedical/SlicerIMSTK.git
- GIT_TAG        2d9d695c6c848a4f48e1eb5e21cd0389289ccc19
+ GIT_TAG        897ab3175ba0fc5275ea4f47e4bdacad99aac7de
  GIT_PROGRESS   1
  QUIET
  )
