@@ -158,12 +158,12 @@ set(extension_name "SlicerMorph")
 set(${extension_name}_SOURCE_DIR "${CMAKE_BINARY_DIR}/${extension_name}")
 FetchContent_Populate(${extension_name}
  SOURCE_DIR     ${${extension_name}_SOURCE_DIR}
- GIT_REPOSITORY https://github.com/andinet/SlicerMorph.git
- GIT_TAG        0ab0dfabdee835ccf1a4b256b092885622388e34
+ GIT_REPOSITORY https://github.com/SlicerMorph/SlicerMorph.git
+ GIT_TAG        f7c6f82397e1124445e7bcc9824f99ae37d4e64a
  GIT_PROGRESS   1
  QUIET
  )
-list(APPEND Slicer_EXTENSION_SOURCE_DIRS ${${extension_name}_SOURCE_DIR})
+list(APPEND Slicer_EXTENSION_SOURCE_DIRS ${${extension_name}_SOURCE_DIR}/ImageStacks)
 
 #FlyThrough modules
 set(extension_name "FlyThrough")
