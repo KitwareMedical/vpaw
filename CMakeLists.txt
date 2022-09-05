@@ -126,7 +126,6 @@ set(Slicer_QTLOADABLEMODULES_DISABLED
 set(Slicer_QTSCRIPTEDMODULES_DISABLED
   DataProbe
   DMRIInstall
-  Endoscopy
   LabelStatistics
   PerformanceTests
   VectorToScalarVolume
@@ -184,6 +183,19 @@ FetchContent_Populate(${extension_name}
  SOURCE_DIR     ${${extension_name}_SOURCE_DIR}
  GIT_REPOSITORY https://github.com/KitwareMedical/SlicerIMSTK.git
  GIT_TAG        cd37cd73f853cf3cb09b9611d9cb715d5f84613c
+ GIT_PROGRESS   1
+ QUIET
+ )
+message(STATUS "Remote - ${extension_name} [OK]")
+list(APPEND Slicer_EXTENSION_SOURCE_DIRS ${${extension_name}_SOURCE_DIR})
+
+#SlicerSegmentEditorExtraEffects modules
+set(extension_name "SlicerSegmentEditorExtraEffects")
+set(${extension_name}_SOURCE_DIR "${CMAKE_BINARY_DIR}/${extension_name}")
+FetchContent_Populate(${extension_name}
+ SOURCE_DIR     ${${extension_name}_SOURCE_DIR}
+ GIT_REPOSITORY https://github.com/lassoan/SlicerSegmentEditorExtraEffects.git
+ GIT_TAG        719b242faf301c899fb8ec7a448440ae54ca762c 
  GIT_PROGRESS   1
  QUIET
  )
