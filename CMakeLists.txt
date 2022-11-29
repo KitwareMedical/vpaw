@@ -135,7 +135,7 @@ set(Slicer_QTSCRIPTEDMODULES_DISABLED
 set(Slicer_EXTENSION_SOURCE_DIRS
   #${vpaw_SOURCE_DIR}/Modules/CLI/MyCLIModule
   #${vpaw_SOURCE_DIR}/Modules/Loadable/MyLoadableModule
-  #${vpaw_SOURCE_DIR}/Modules/Scripted/Home
+  ${vpaw_SOURCE_DIR}/Modules/Scripted/Home
   )
 
 # Add remote extension source directories
@@ -195,7 +195,7 @@ set(${extension_name}_SOURCE_DIR "${CMAKE_BINARY_DIR}/${extension_name}")
 FetchContent_Populate(${extension_name}
  SOURCE_DIR     ${${extension_name}_SOURCE_DIR}
  GIT_REPOSITORY https://github.com/lassoan/SlicerSegmentEditorExtraEffects.git
- GIT_TAG        719b242faf301c899fb8ec7a448440ae54ca762c 
+ GIT_TAG        719b242faf301c899fb8ec7a448440ae54ca762c
  GIT_PROGRESS   1
  QUIET
  )
