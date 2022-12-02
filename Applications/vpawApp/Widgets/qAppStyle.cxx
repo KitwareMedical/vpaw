@@ -43,12 +43,11 @@ qAppStyle::qAppStyle()
 }
 
 // --------------------------------------------------------------------------
-qAppStyle::~qAppStyle()
-{
-}
+qAppStyle::~qAppStyle() {}
 
 //------------------------------------------------------------------------------
-QPalette qAppStyle::standardPalette()const
+QPalette
+qAppStyle::standardPalette() const
 {
   QPalette palette = this->Superclass::standardPalette();
 
@@ -82,88 +81,79 @@ QPalette qAppStyle::standardPalette()const
 }
 
 //------------------------------------------------------------------------------
-void qAppStyle::drawComplexControl(ComplexControl control,
-                                   const QStyleOptionComplex* option,
-                                   QPainter* painter,
-                                   const QWidget* widget )const
+void
+qAppStyle::drawComplexControl(ComplexControl              control,
+                              const QStyleOptionComplex * option,
+                              QPainter *                  painter,
+                              const QWidget *             widget) const
 {
-  const_cast<QStyleOptionComplex*>(option)->palette =
-    this->tweakWidgetPalette(option->palette, widget);
+  const_cast<QStyleOptionComplex *>(option)->palette = this->tweakWidgetPalette(option->palette, widget);
   this->Superclass::drawComplexControl(control, option, painter, widget);
 }
 
 //------------------------------------------------------------------------------
-void qAppStyle::drawControl(ControlElement element,
-                            const QStyleOption* option,
-                            QPainter* painter,
-                            const QWidget* widget )const
+void
+qAppStyle::drawControl(ControlElement       element,
+                       const QStyleOption * option,
+                       QPainter *           painter,
+                       const QWidget *      widget) const
 {
-  const_cast<QStyleOption*>(option)->palette =
-    this->tweakWidgetPalette(option->palette, widget);
+  const_cast<QStyleOption *>(option)->palette = this->tweakWidgetPalette(option->palette, widget);
 
   // For some reason the toolbar paint routine is not respecting the palette.
   // here we make sure the background is correctly drawn.
-  if (element == QStyle::CE_ToolBar &&
-      qobject_cast<const QToolBar*>(widget))
-    {
+  if (element == QStyle::CE_ToolBar && qobject_cast<const QToolBar *>(widget))
+  {
     painter->fillRect(option->rect, option->palette.brush(QPalette::Window));
-    }
+  }
   this->Superclass::drawControl(element, option, painter, widget);
 }
 
 //------------------------------------------------------------------------------
-void qAppStyle::drawPrimitive(PrimitiveElement element,
-                              const QStyleOption* option,
-                              QPainter* painter,
-                              const QWidget* widget )const
+void
+qAppStyle::drawPrimitive(PrimitiveElement     element,
+                         const QStyleOption * option,
+                         QPainter *           painter,
+                         const QWidget *      widget) const
 {
-  const_cast<QStyleOption*>(option)->palette =
-    this->tweakWidgetPalette(option->palette, widget);
+  const_cast<QStyleOption *>(option)->palette = this->tweakWidgetPalette(option->palette, widget);
   this->Superclass::drawPrimitive(element, option, painter, widget);
 }
 
 //------------------------------------------------------------------------------
-QPalette qAppStyle::tweakWidgetPalette(QPalette widgetPalette,
-                                       const QWidget* widget)const
+QPalette
+qAppStyle::tweakWidgetPalette(QPalette widgetPalette, const QWidget * widget) const
 {
   if (!widget)
-    {
+  {
     return widgetPalette;
-    }
-  const QPushButton* pushButton =
-    qobject_cast<const QPushButton*>(widget);
-  if (pushButton &&
-      !pushButton->text().isEmpty())
-    {
+  }
+  const QPushButton * pushButton = qobject_cast<const QPushButton *>(widget);
+  if (pushButton && !pushButton->text().isEmpty())
+  {
     QColor buttonColor = this->standardPalette().color(QPalette::Dark);
     widgetPalette.setColor(QPalette::Active, QPalette::Button, buttonColor);
     widgetPalette.setColor(QPalette::Inactive, QPalette::Button, buttonColor);
     QColor disabledButtonColor = buttonColor.toHsv();
-    disabledButtonColor.setHsvF(disabledButtonColor.hueF(),
-                                disabledButtonColor.saturationF() * 0.8,
-                                disabledButtonColor.valueF() * 0.9);
+    disabledButtonColor.setHsvF(
+      disabledButtonColor.hueF(), disabledButtonColor.saturationF() * 0.8, disabledButtonColor.valueF() * 0.9);
     widgetPalette.setColor(QPalette::Disabled, QPalette::Button, disabledButtonColor);
-    QColor buttonTextColor =
-      this->standardPalette().color(QPalette::Light);
+    QColor buttonTextColor = this->standardPalette().color(QPalette::Light);
     widgetPalette.setColor(QPalette::Active, QPalette::ButtonText, buttonTextColor);
     widgetPalette.setColor(QPalette::Inactive, QPalette::ButtonText, buttonTextColor);
     QColor disabledButtonTextColor = buttonTextColor.toHsv();
-    disabledButtonTextColor.setHsvF(buttonColor.hueF(),
-                                    disabledButtonTextColor.saturationF() * 0.3,
-                                    disabledButtonTextColor.valueF() * 0.8);
+    disabledButtonTextColor.setHsvF(
+      buttonColor.hueF(), disabledButtonTextColor.saturationF() * 0.3, disabledButtonTextColor.valueF() * 0.8);
     widgetPalette.setColor(QPalette::Disabled, QPalette::ButtonText, disabledButtonColor);
-    }
-  if (qobject_cast<const QMenuBar*>(widget))
-    {
+  }
+  if (qobject_cast<const QMenuBar *>(widget))
+  {
     QColor highlightColor = this->standardPalette().color(QPalette::Dark);
-    //QBrush highlightBrush = this->standardPalette().brush(QPalette::Dark);
-    QColor highlightTextColor =
-      this->standardPalette().color(QPalette::Light);
-    QBrush highlightTextBrush =
-      this->standardPalette().brush(QPalette::Light);
+    // QBrush highlightBrush = this->standardPalette().brush(QPalette::Dark);
+    QColor highlightTextColor = this->standardPalette().color(QPalette::Light);
+    QBrush highlightTextBrush = this->standardPalette().brush(QPalette::Light);
     QColor darkColor = this->standardPalette().color(QPalette::Highlight);
-    QColor lightColor =
-      this->standardPalette().color(QPalette::HighlightedText);
+    QColor lightColor = this->standardPalette().color(QPalette::HighlightedText);
 
     QLinearGradient hilightGradient(0., 0., 0., 1.);
     hilightGradient.setCoordinateMode(QGradient::ObjectBoundingMode);
@@ -187,59 +177,59 @@ QPalette qAppStyle::tweakWidgetPalette(QPalette widgetPalette,
     widgetPalette.setBrush(QPalette::Text, highlightTextBrush);
     widgetPalette.setBrush(QPalette::Button, highlightBrush);
     widgetPalette.setBrush(QPalette::ButtonText, highlightTextBrush);
-    }
-/*
-  QWidget* parentWidget = widget->parentWidget();
-  QWidget* grandParentWidget = parentWidget? parentWidget->parentWidget() : 0;
-  if (qobject_cast<const QToolBar*>(widget) ||
-      qobject_cast<QToolBar*>(parentWidget) ||
-      qobject_cast<QToolBar*>(grandParentWidget))
-    {
-    QColor windowColor = this->standardPalette().color(QPalette::Window);
+  }
+  /*
+    QWidget* parentWidget = widget->parentWidget();
+    QWidget* grandParentWidget = parentWidget? parentWidget->parentWidget() : 0;
+    if (qobject_cast<const QToolBar*>(widget) ||
+        qobject_cast<QToolBar*>(parentWidget) ||
+        qobject_cast<QToolBar*>(grandParentWidget))
+      {
+      QColor windowColor = this->standardPalette().color(QPalette::Window);
 
-    //QColor highlightColor = this->standardPalette().color(QPalette::Highlight);
-    //QColor highlightTextColor =
-    //  this->standardPalette().color(QPalette::HighlightedText);
-    //QColor darkColor = this->standardPalette().color(QPalette::Dark);
-    //QColor lightColor =
-    //  this->standardPalette().color(QPalette::Light);
-    QColor highlightColor = this->standardPalette().color(QPalette::Dark);
-    //QBrush highlightBrush = this->standardPalette().brush(QPalette::Dark);
-    QBrush highlightTextBrush =
-      this->standardPalette().brush(QPalette::Light);
-    QColor darkColor = this->standardPalette().color(QPalette::Highlight);
-    QColor lightColor =
-      this->standardPalette().color(QPalette::HighlightedText);
+      //QColor highlightColor = this->standardPalette().color(QPalette::Highlight);
+      //QColor highlightTextColor =
+      //  this->standardPalette().color(QPalette::HighlightedText);
+      //QColor darkColor = this->standardPalette().color(QPalette::Dark);
+      //QColor lightColor =
+      //  this->standardPalette().color(QPalette::Light);
+      QColor highlightColor = this->standardPalette().color(QPalette::Dark);
+      //QBrush highlightBrush = this->standardPalette().brush(QPalette::Dark);
+      QBrush highlightTextBrush =
+        this->standardPalette().brush(QPalette::Light);
+      QColor darkColor = this->standardPalette().color(QPalette::Highlight);
+      QColor lightColor =
+        this->standardPalette().color(QPalette::HighlightedText);
 
-    QLinearGradient hilightGradient(0., 0., 0., 1.);
-    hilightGradient.setCoordinateMode(QGradient::ObjectBoundingMode);
+      QLinearGradient hilightGradient(0., 0., 0., 1.);
+      hilightGradient.setCoordinateMode(QGradient::ObjectBoundingMode);
 
-    hilightGradient.setColorAt(0., highlightColor);
-    hilightGradient.setColorAt(1., highlightColor.darker(140));
-    QBrush highlightBrush(hilightGradient);
+      hilightGradient.setColorAt(0., highlightColor);
+      hilightGradient.setColorAt(1., highlightColor.darker(140));
+      QBrush highlightBrush(hilightGradient);
 
-    widgetPalette.setColor(QPalette::Highlight, darkColor);
-    widgetPalette.setColor(QPalette::HighlightedText, lightColor);
-    widgetPalette.setBrush(QPalette::Window, highlightBrush);
-    widgetPalette.setBrush(QPalette::WindowText, highlightTextBrush);
-    widgetPalette.setBrush(QPalette::Base, highlightBrush);
-    widgetPalette.setBrush(QPalette::Text, highlightTextBrush);
-    widgetPalette.setBrush(QPalette::Button, highlightBrush);
-    widgetPalette.setBrush(QPalette::ButtonText, highlightTextBrush);
-    }
-*/
+      widgetPalette.setColor(QPalette::Highlight, darkColor);
+      widgetPalette.setColor(QPalette::HighlightedText, lightColor);
+      widgetPalette.setBrush(QPalette::Window, highlightBrush);
+      widgetPalette.setBrush(QPalette::WindowText, highlightTextBrush);
+      widgetPalette.setBrush(QPalette::Base, highlightBrush);
+      widgetPalette.setBrush(QPalette::Text, highlightTextBrush);
+      widgetPalette.setBrush(QPalette::Button, highlightBrush);
+      widgetPalette.setBrush(QPalette::ButtonText, highlightTextBrush);
+      }
+  */
   return widgetPalette;
 }
 
 //------------------------------------------------------------------------------
-void qAppStyle::polish(QWidget* widget)
+void
+qAppStyle::polish(QWidget * widget)
 {
   this->Superclass::polish(widget);
-  ctkCollapsibleButton* collapsibleButton =
-    qobject_cast<ctkCollapsibleButton*>(widget);
+  ctkCollapsibleButton * collapsibleButton = qobject_cast<ctkCollapsibleButton *>(widget);
   if (collapsibleButton)
-    {
+  {
     collapsibleButton->setFlat(true);
     collapsibleButton->setContentsFrameShadow(QFrame::Sunken);
-    }
+  }
 }
