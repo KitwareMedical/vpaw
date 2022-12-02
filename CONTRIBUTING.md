@@ -51,5 +51,5 @@ Then, click on the "Delete branch" button that appears afterward.
 
 [fk]: http://help.github.com/forking/
 [push]: https://help.github.com/articles/pushing-to-a-remote/
-[pr]: https://github.com/Kitware/vpaw/merge_requests
-[is]: https://github.com/Kitware/vpaw/issues
+[pr]: https://github.com/KitwareMedical/vpaw/merge_requests
+[is]: https://github.com/KitwareMedical/vpaw/issues

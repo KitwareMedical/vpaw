@@ -10,6 +10,7 @@ The initial source files were created using [KitwareMedical/SlicerCustomAppTempl
 
 Prerequisites
 -------------
+
 * Microsoft Windows 7 or above recommended
 
 * Supported Microsoft Visual Studio versions:
@@ -31,8 +32,8 @@ Prerequisites
 
     * Setup [your git username](https://help.github.com/articles/setting-your-username-in-git) and [your git email](https://help.github.com/articles/setting-your-email-in-git).
 
-    * If not already done, email `FirstName LastName <firstname.lastname@Kitware.com>` to be granted access to
-    the [Kitware/vpaw](https://github.com/Kitware/vpaw) repository.
+    * If not already done, email `FirstName LastName <firstname.lastname@kitware.com>` to be granted access to
+    the [KitwareMedical/vpaw](https://github.com/KitwareMedical/vpaw) repository.
 
 Checkout
 --------
@@ -44,7 +45,7 @@ Checkout
 cd /c
 mkdir W
 cd /c/W
-git clone https://github.com/Kitware/vpaw.git v
+git clone https://github.com/KitwareMedical/vpaw.git v
 ```
 
 Note: use short source and build directory names to avoid the [maximum path length limitation](http://msdn.microsoft.com/en-us/library/windows/desktop/aa365247%28v=vs.85%29.aspx#maxpath).
@@ -91,4 +92,3 @@ Install [NSIS 2](http://sourceforge.net/projects/nsis/files/)
 cd C:\W\vR\Slicer-build
 cmake --build . --config Release --target PACKAGE
 ```
-

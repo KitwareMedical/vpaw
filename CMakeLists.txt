@@ -2,18 +2,20 @@ cmake_minimum_required(VERSION 3.16.3)
 
 # Enable C++14
 if(NOT DEFINED CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 14)
+  set(CMAKE_CXX_STANDARD 17)
 endif()
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+
+set (EP_GIT_PROTOCOL "https")
 
 # Slicer sources
 include(FetchContent)
 if(NOT DEFINED slicersources_SOURCE_DIR)
   # Download Slicer sources and set variables slicersources_SOURCE_DIR and slicersources_BINARY_DIR
   FetchContent_Populate(slicersources
-    GIT_REPOSITORY https://github.com/Slicer/Slicer
-    GIT_TAG        177f3b324247de4e77d4497cc9121fe37dd5b3f3  # June 1, 2022
+    GIT_REPOSITORY ${EP_GIT_PROTOCOL}://github.com/Slicer/Slicer
+    GIT_TAG        6834c51215cd3217e01da622c4d4687255a92bea
     GIT_PROGRESS   1
     )
 else()
@@ -92,7 +94,8 @@ endif()
 
 option(Slicer_BUILD_DICOM_SUPPORT               "Build application with DICOM support"                ON)
 option(Slicer_BUILD_DIFFUSION_SUPPORT           "Build application with Diffusion support"            OFF)
-option(Slicer_BUILD_EXTENSIONMANAGER_SUPPORT    "Build application with ExtensionManager support"     OFF)
+option(Slicer_BUILD_EXTENSIONMANAGER_SUPPORT    "Build application with ExtensionManager support"     ON)
+option(Slicer_BUILD_APPLICATIONUPDATE_SUPPORT   "Build Slicer with application update support"        OFF)
 option(Slicer_BUILD_MULTIVOLUME_SUPPORT         "Build application with MultiVolume support"          OFF)
 option(Slicer_BUILD_PARAMETERSERIALIZER_SUPPORT "Build application with parameter serializer support" OFF)
 option(Slicer_USE_PYTHONQT                      "Build application with Python support"               ON)
@@ -126,8 +129,10 @@ set(Slicer_QTLOADABLEMODULES_DISABLED
 set(Slicer_QTSCRIPTEDMODULES_DISABLED
   DataProbe
   DMRIInstall
+  Endoscopy
   LabelStatistics
   PerformanceTests
+  SampleData
   VectorToScalarVolume
   )
 
@@ -145,7 +150,7 @@ set(Slicer_EXTENSION_SOURCE_DIRS
 #set(${extension_name}_SOURCE_DIR "${CMAKE_BINARY_DIR}/${extension_name}")
 #FetchContent_Populate(${extension_name}
 #  SOURCE_DIR     ${${extension_name}_SOURCE_DIR}
-#  GIT_REPOSITORY https://github.com/openigtlink/SlicerOpenIGTLink.git
+#  GIT_REPOSITORY ${EP_GIT_PROTOCOL}://github.com/openigtlink/SlicerOpenIGTLink.git
 #  GIT_TAG        2b92f7b1ffe02403109b671f28424e8770e902a0
 #  GIT_PROGRESS   1
 #  QUIET
