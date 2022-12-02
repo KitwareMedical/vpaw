@@ -31,14 +31,15 @@ class Q_VPAW_APP_EXPORT qvpawAppMainWindow : public qSlicerMainWindow
 public:
   typedef qSlicerMainWindow Superclass;
 
-  qvpawAppMainWindow(QWidget *parent=0);
+  qvpawAppMainWindow(QWidget * parent = 0);
   virtual ~qvpawAppMainWindow();
 
 public slots:
-  void on_HelpAboutvpawAppAction_triggered();
+  void
+  on_HelpAboutvpawAppAction_triggered();
 
 protected:
-  qvpawAppMainWindow(qvpawAppMainWindowPrivate* pimpl, QWidget* parent);
+  qvpawAppMainWindow(qvpawAppMainWindowPrivate * pimpl, QWidget * parent);
 
 private:
   Q_DECLARE_PRIVATE(qvpawAppMainWindow);

@@ -35,7 +35,8 @@ namespace
 {
 
 //----------------------------------------------------------------------------
-int SlicerAppMain(int argc, char* argv[])
+int
+SlicerAppMain(int argc, char * argv[])
 {
   typedef qvpawAppMainWindow SlicerMainWindowType;
 
@@ -43,26 +44,26 @@ int SlicerAppMain(int argc, char* argv[])
 
   qSlicerApplication app(argc, argv);
   if (app.returnCode() != -1)
-    {
+  {
     return app.returnCode();
-    }
+  }
 
   QScopedPointer<SlicerMainWindowType> window;
-  QScopedPointer<QSplashScreen> splashScreen;
+  QScopedPointer<QSplashScreen>        splashScreen;
 
-  qSlicerApplicationHelper::postInitializeApplication<SlicerMainWindowType>(
-        app, splashScreen, window);
+  qSlicerApplicationHelper::postInitializeApplication<SlicerMainWindowType>(app, splashScreen, window);
 
   if (!window.isNull())
-    {
-    QString windowTitle = QString("%1 %2").arg(Slicer_MAIN_PROJECT_APPLICATION_NAME).arg(Slicer_MAIN_PROJECT_VERSION_FULL);
+  {
+    QString windowTitle =
+      QString("%1 %2").arg(Slicer_MAIN_PROJECT_APPLICATION_NAME).arg(Slicer_MAIN_PROJECT_VERSION_FULL);
     window->setWindowTitle(windowTitle);
-    }
+  }
 
   // Load default haptic probe model from resource file.
   QFile file(":/cylinder.ply");
   if (file.open(QIODevice::ReadOnly) && app.mrmlScene())
-    {
+  {
     auto bytes = file.readAll();
 
     vtkNew<vtkPLYReader> reader;
@@ -70,20 +71,20 @@ int SlicerAppMain(int argc, char* argv[])
     reader->ReadFromInputStringOn();
     reader->Update();
 
-     if (reader->GetErrorCode() == 0)
-       {
-       vtkNew<vtkMRMLModelNode> hapticProbe;
-       hapticProbe->SetName("Model: Haptic Probe");
-       app.mrmlScene()->AddNode(hapticProbe);
-       hapticProbe->SetAndObserveMesh(reader->GetOutput());
+    if (reader->GetErrorCode() == 0)
+    {
+      vtkNew<vtkMRMLModelNode> hapticProbe;
+      hapticProbe->SetName("Model: Haptic Probe");
+      app.mrmlScene()->AddNode(hapticProbe);
+      hapticProbe->SetAndObserveMesh(reader->GetOutput());
 
-       vtkNew<vtkMRMLLinearTransformNode> transformNode;
-       transformNode->SetName("Transform: Haptic Probe");
-       app.mrmlScene()->AddNode(transformNode);
-       hapticProbe->SetAndObserveTransformNodeID(transformNode->GetID());
-       hapticProbe->SetDisplayVisibility(true);
-       }
+      vtkNew<vtkMRMLLinearTransformNode> transformNode;
+      transformNode->SetName("Transform: Haptic Probe");
+      app.mrmlScene()->AddNode(transformNode);
+      hapticProbe->SetAndObserveTransformNodeID(transformNode->GetID());
+      hapticProbe->SetDisplayVisibility(true);
     }
+  }
 
   return app.exec();
 }

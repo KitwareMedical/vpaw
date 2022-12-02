@@ -32,18 +32,16 @@
 //-----------------------------------------------------------------------------
 // qvpawAppMainWindowPrivate methods
 
-qvpawAppMainWindowPrivate::qvpawAppMainWindowPrivate(qvpawAppMainWindow& object)
+qvpawAppMainWindowPrivate::qvpawAppMainWindowPrivate(qvpawAppMainWindow & object)
   : Superclass(object)
-{
-}
+{}
 
 //-----------------------------------------------------------------------------
-qvpawAppMainWindowPrivate::~qvpawAppMainWindowPrivate()
-{
-}
+qvpawAppMainWindowPrivate::~qvpawAppMainWindowPrivate() {}
 
 //-----------------------------------------------------------------------------
-void qvpawAppMainWindowPrivate::init()
+void
+qvpawAppMainWindowPrivate::init()
 {
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 7, 0))
   QApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
@@ -53,14 +51,15 @@ void qvpawAppMainWindowPrivate::init()
 }
 
 //-----------------------------------------------------------------------------
-void qvpawAppMainWindowPrivate::setupUi(QMainWindow * mainWindow)
+void
+qvpawAppMainWindowPrivate::setupUi(QMainWindow * mainWindow)
 {
   qSlicerApplication * app = qSlicerApplication::application();
 
   //----------------------------------------------------------------------------
   // Add actions
   //----------------------------------------------------------------------------
-  QAction* helpAboutSlicerAppAction = new QAction(mainWindow);
+  QAction * helpAboutSlicerAppAction = new QAction(mainWindow);
   helpAboutSlicerAppAction->setObjectName("HelpAboutvpawAppAction");
   helpAboutSlicerAppAction->setText("About " + app->applicationName());
 
@@ -78,14 +77,14 @@ void qvpawAppMainWindowPrivate::setupUi(QMainWindow * mainWindow)
   //----------------------------------------------------------------------------
   mainWindow->setWindowIcon(QIcon(":/Icons/Medium/DesktopIcon.png"));
 
-  QLabel* logoLabel = new QLabel();
+  QLabel * logoLabel = new QLabel();
   logoLabel->setObjectName("LogoLabel");
   logoLabel->setPixmap(qMRMLWidget::pixmapFromIcon(QIcon(":/LogoFull.png")));
   this->PanelDockWidget->setTitleBarWidget(logoLabel);
 
   // Hide the toolbars
   this->MainToolBar->setVisible(false);
-  //this->ModuleSelectorToolBar->setVisible(false);
+  // this->ModuleSelectorToolBar->setVisible(false);
   this->ModuleToolBar->setVisible(false);
   this->ViewToolBar->setVisible(false);
   this->MouseModeToolBar->setVisible(false);
@@ -94,15 +93,15 @@ void qvpawAppMainWindowPrivate::setupUi(QMainWindow * mainWindow)
   this->DialogToolBar->setVisible(false);
 
   // Hide the menus
-  //this->menubar->setVisible(false);
-  //this->FileMenu->setVisible(false);
-  //this->EditMenu->setVisible(false);
-  //this->ViewMenu->setVisible(false);
-  //this->LayoutMenu->setVisible(false);
-  //this->HelpMenu->setVisible(false);
+  // this->menubar->setVisible(false);
+  // this->FileMenu->setVisible(false);
+  // this->EditMenu->setVisible(false);
+  // this->ViewMenu->setVisible(false);
+  // this->LayoutMenu->setVisible(false);
+  // this->HelpMenu->setVisible(false);
 
   // Hide the modules panel
-  //this->PanelDockWidget->setVisible(false);
+  // this->PanelDockWidget->setVisible(false);
   this->DataProbeCollapsibleWidget->setCollapsed(true);
   this->DataProbeCollapsibleWidget->setVisible(false);
   this->StatusBar->setVisible(false);
@@ -112,7 +111,7 @@ void qvpawAppMainWindowPrivate::setupUi(QMainWindow * mainWindow)
 // qvpawAppMainWindow methods
 
 //-----------------------------------------------------------------------------
-qvpawAppMainWindow::qvpawAppMainWindow(QWidget* windowParent)
+qvpawAppMainWindow::qvpawAppMainWindow(QWidget * windowParent)
   : Superclass(new qvpawAppMainWindowPrivate(*this), windowParent)
 {
   Q_D(qvpawAppMainWindow);
@@ -120,20 +119,18 @@ qvpawAppMainWindow::qvpawAppMainWindow(QWidget* windowParent)
 }
 
 //-----------------------------------------------------------------------------
-qvpawAppMainWindow::qvpawAppMainWindow(
-  qvpawAppMainWindowPrivate* pimpl, QWidget* windowParent)
+qvpawAppMainWindow::qvpawAppMainWindow(qvpawAppMainWindowPrivate * pimpl, QWidget * windowParent)
   : Superclass(pimpl, windowParent)
 {
   // init() is called by derived class.
 }
 
 //-----------------------------------------------------------------------------
-qvpawAppMainWindow::~qvpawAppMainWindow()
-{
-}
+qvpawAppMainWindow::~qvpawAppMainWindow() {}
 
 //-----------------------------------------------------------------------------
-void qvpawAppMainWindow::on_HelpAboutvpawAppAction_triggered()
+void
+qvpawAppMainWindow::on_HelpAboutvpawAppAction_triggered()
 {
   qSlicerAboutDialog about(this);
   about.setLogo(QPixmap(":/Logo.png"));

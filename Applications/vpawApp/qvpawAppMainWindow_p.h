@@ -25,18 +25,20 @@
 #include "qSlicerMainWindow_p.h"
 
 //-----------------------------------------------------------------------------
-class Q_VPAW_APP_EXPORT qvpawAppMainWindowPrivate
-  : public qSlicerMainWindowPrivate
+class Q_VPAW_APP_EXPORT qvpawAppMainWindowPrivate : public qSlicerMainWindowPrivate
 {
   Q_DECLARE_PUBLIC(qvpawAppMainWindow);
+
 public:
   typedef qSlicerMainWindowPrivate Superclass;
-  qvpawAppMainWindowPrivate(qvpawAppMainWindow& object);
+  qvpawAppMainWindowPrivate(qvpawAppMainWindow & object);
   virtual ~qvpawAppMainWindowPrivate();
 
-  virtual void init();
+  virtual void
+  init();
   /// Reimplemented for custom behavior
-  virtual void setupUi(QMainWindow * mainWindow);
+  virtual void
+  setupUi(QMainWindow * mainWindow);
 };
 
 #endif
