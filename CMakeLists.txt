@@ -141,6 +141,8 @@ set(Slicer_EXTENSION_SOURCE_DIRS
   #${vpaw_SOURCE_DIR}/Modules/CLI/MyCLIModule
   #${vpaw_SOURCE_DIR}/Modules/Loadable/MyLoadableModule
   ${vpaw_SOURCE_DIR}/Modules/Scripted/Home
+  ${vpaw_SOURCE_DIR}/Modules/Scripted/VPAWVisualize
+  ${vpaw_SOURCE_DIR}/Modules/Scripted/VPAWModel
   )
 
 # Add remote extension source directories
