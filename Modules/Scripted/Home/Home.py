@@ -1,19 +1,19 @@
-import os
-import vtk, qt, ctk, slicer
-from slicer.ScriptedLoadableModule import *
 import logging
-from slicer.util import VTKObservationMixin
+import qt
+import slicer
+import slicer.ScriptedLoadableModule
+import slicer.util.VTKObservationMixin
 
 # from Resources import HomeResourcesResources
 
 
-class Home(ScriptedLoadableModule):
+class Home(slicer.ScriptedLoadableModule.ScriptedLoadableModule):
     """Uses ScriptedLoadableModule base class, available at:
     https://github.com/Slicer/Slicer/blob/main/Base/Python/slicer/ScriptedLoadableModule.py
     """
 
     def __init__(self, parent):
-        ScriptedLoadableModule.__init__(self, parent)
+        slicer.ScriptedLoadableModule.ScriptedLoadableModule.__init__(self, parent)
         self.parent.title = (
             "Home"  # TODO make this more human readable by adding spaces
         )
@@ -27,17 +27,22 @@ class Home(ScriptedLoadableModule):
         )
 
 
-class HomeWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
+class HomeWidget(
+    slicer.ScriptedLoadableModule.ScriptedLoadableModuleWidget,
+    slicer.util.VTKObservationMixin,
+):
     """Uses ScriptedLoadableModuleWidget base class, available at:
     https://github.com/Slicer/Slicer/blob/main/Base/Python/slicer/ScriptedLoadableModule.py
     """
 
     def __init__(self, parent):
-        ScriptedLoadableModuleWidget.__init__(self, parent)
-        VTKObservationMixin.__init__(self)
+        slicer.ScriptedLoadableModule.ScriptedLoadableModuleWidget.__init__(
+            self, parent
+        )
+        slicer.util.VTKObservationMixin.__init__(self)
 
     def setup(self):
-        ScriptedLoadableModuleWidget.setup(self)
+        slicer.ScriptedLoadableModule.ScriptedLoadableModuleWidget.setup(self)
 
         # Load widget from .ui file (created by Qt Designer)
         self.uiWidget = slicer.util.loadUI(self.resourcePath("UI/Home.ui"))
@@ -77,7 +82,7 @@ class HomeWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         slicer.util.setModulePanelTitleVisible(False)
         slicer.util.setPythonConsoleVisible(False)
         slicer.util.setToolbarsVisible(True)
-        mainToolBar = slicer.util.findChild(slicer.util.mainWindow(), "MainToolBar")
+        slicer.util.findChild(slicer.util.mainWindow(), "MainToolBar")
         keepToolbars = [
             slicer.util.findChild(slicer.util.mainWindow(), "MainToolBar"),
             slicer.util.findChild(slicer.util.mainWindow(), "ViewToolBar"),
@@ -144,7 +149,7 @@ class HomeWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
                 widget.styleSheet = style
 
 
-class HomeLogic(ScriptedLoadableModuleLogic):
+class HomeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
     """This class should implement all the actual
     computation done by your module.  The interface
     should be such that other python code can import
@@ -180,7 +185,7 @@ class HomeLogic(ScriptedLoadableModuleLogic):
 
     # settings for 3D view
     def setup3DView(self):
-        layoutManager = slicer.app.layoutManager()
+        slicer.app.layoutManager()
         # layoutManager.setLayout(slicer.vtkMRMLLayoutNode.SlicerLayoutOneUp3DView)
         # controller = slicer.app.layoutManager().threeDWidget(0).threeDController()
         # controller.setBlackBackground()
@@ -213,7 +218,7 @@ class HomeLogic(ScriptedLoadableModuleLogic):
 
     # Settings for slice views
     def setupSliceViewer(self, sliceWidget):
-        controller = sliceWidget.sliceController()
+        sliceWidget.sliceController()
         # controller.setOrientationMarkerType(3)  #Axis marker
         # controller.setRulerType(1)  #Thin ruler
         # controller.setRulerColor(0) #White ruler
@@ -221,7 +226,7 @@ class HomeLogic(ScriptedLoadableModuleLogic):
         # controller.sliceViewLabel = ''
 
 
-class HomeTest(ScriptedLoadableModuleTest):
+class HomeTest(slicer.ScriptedLoadableModule.ScriptedLoadableModuleTest):
     """
     This is the test case for your scripted module.
     Uses ScriptedLoadableModuleTest base class, available at:
@@ -254,7 +259,7 @@ class HomeTest(ScriptedLoadableModuleTest):
         # first, get some data
         #
 
-        logic = HomeLogic()
+        HomeLogic()
         self.delayDisplay("Test passed!")
 
 
