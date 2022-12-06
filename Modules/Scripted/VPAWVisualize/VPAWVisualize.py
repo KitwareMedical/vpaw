@@ -1,11 +1,8 @@
 import logging
-import os
-
-import vtk
-
 import slicer
-from slicer.ScriptedLoadableModule import *
-from slicer.util import VTKObservationMixin
+import slicer.ScriptedLoadableModule
+import slicer.util.VTKObservationMixin
+import vtk
 
 
 #
@@ -13,19 +10,15 @@ from slicer.util import VTKObservationMixin
 #
 
 
-class VPAWVisualize(ScriptedLoadableModule):
+class VPAWVisualize(slicer.ScriptedLoadableModule.ScriptedLoadableModule):
     """Uses ScriptedLoadableModule base class, available at:
     https://github.com/Slicer/Slicer/blob/main/Base/Python/slicer/ScriptedLoadableModule.py
     """
 
     def __init__(self, parent):
-        ScriptedLoadableModule.__init__(self, parent)
-        self.parent.title = (
-            "VPAW Visualize"
-        )
-        self.parent.categories = [
-            "VPAW"
-        ]
+        slicer.ScriptedLoadableModule.ScriptedLoadableModule.__init__(self, parent)
+        self.parent.title = "VPAW Visualize"
+        self.parent.categories = ["VPAW"]
         self.parent.dependencies = (
             []
         )  # TODO: add here list of module names that this module requires
@@ -73,7 +66,10 @@ def registerSampleData():
 #
 
 
-class VPAWVisualizeWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
+class VPAWVisualizeWidget(
+    slicer.ScriptedLoadableModule.ScriptedLoadableModuleWidget,
+    slicer.util.VTKObservationMixin,
+):
     """Uses ScriptedLoadableModuleWidget base class, available at:
     https://github.com/Slicer/Slicer/blob/main/Base/Python/slicer/ScriptedLoadableModule.py
     """
@@ -83,8 +79,12 @@ class VPAWVisualizeWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         Called when the user opens the module the first time and the widget is
         initialized.
         """
-        ScriptedLoadableModuleWidget.__init__(self, parent)
-        VTKObservationMixin.__init__(self)  # needed for parameter node observation
+        slicer.ScriptedLoadableModule.ScriptedLoadableModuleWidget.__init__(
+            self, parent
+        )
+        slicer.util.VTKObservationMixin.__init__(
+            self
+        )  # needed for parameter node observation
         self.logic = None
         self._parameterNode = None
         self._updatingGUIFromParameterNode = False
@@ -94,7 +94,7 @@ class VPAWVisualizeWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
         Called when the user opens the module the first time and the widget is
         initialized.
         """
-        ScriptedLoadableModuleWidget.setup(self)
+        slicer.ScriptedLoadableModule.ScriptedLoadableModuleWidget.setup(self)
 
         # Load widget from .ui file (created by Qt Designer).
         # Additional widgets can be instantiated manually and added to self.layout.
@@ -347,7 +347,7 @@ class VPAWVisualizeWidget(ScriptedLoadableModuleWidget, VTKObservationMixin):
 #
 
 
-class VPAWVisualizeLogic(ScriptedLoadableModuleLogic):
+class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
     """This class should implement all the actual computation done by your module.  The
     interface should be such that other python code can import this class and make use
     of the functionality without requiring an instance of the Widget.
@@ -360,7 +360,7 @@ class VPAWVisualizeLogic(ScriptedLoadableModuleLogic):
         Called when the logic class is instantiated. Can be used for initializing member
         variables.
         """
-        ScriptedLoadableModuleLogic.__init__(self)
+        slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic.__init__(self)
 
     def setDefaultParameters(self, parameterNode):
         """
@@ -421,7 +421,7 @@ class VPAWVisualizeLogic(ScriptedLoadableModuleLogic):
 #
 
 
-class VPAWVisualizeTest(ScriptedLoadableModuleTest):
+class VPAWVisualizeTest(slicer.ScriptedLoadableModule.ScriptedLoadableModuleTest):
     """
     This is the test case for your scripted module.
     Uses ScriptedLoadableModuleTest base class, available at:
