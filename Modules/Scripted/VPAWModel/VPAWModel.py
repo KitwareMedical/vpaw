@@ -1,7 +1,7 @@
 import logging
 import slicer
 import slicer.ScriptedLoadableModule
-import slicer.util.VTKObservationMixin
+import slicer.util
 import vtk
 
 
@@ -29,7 +29,8 @@ class VPAWModel(slicer.ScriptedLoadableModule.ScriptedLoadableModule):
             "Ebrahim Ebrahim (Kitware, Inc.)",
             "Lee Newberg (Kitware, Inc.)",
         ]
-        # TODO: update with short description of the module and a link to online module documentation
+        # TODO: update with short description of the module and a link to online module
+        # documentation
         self.parent.helpText = """
 This is the scripted loadable module named VPAW Model.  See more information in
 <a href="https://github.com/KitwareMedical/vpaw#VPAWModel">module documentation</a>.
@@ -82,9 +83,8 @@ class VPAWModelWidget(
         slicer.ScriptedLoadableModule.ScriptedLoadableModuleWidget.__init__(
             self, parent
         )
-        slicer.util.VTKObservationMixin.__init__(
-            self
-        )  # needed for parameter node observation
+        # needed for parameter node observation:
+        slicer.util.VTKObservationMixin.__init__(self)
         self.logic = None
         self._parameterNode = None
         self._updatingGUIFromParameterNode = False
