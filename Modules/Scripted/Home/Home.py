@@ -2,7 +2,7 @@ import logging
 import qt
 import slicer
 import slicer.ScriptedLoadableModule
-import slicer.util.VTKObservationMixin
+import slicer.util
 
 # from Resources import HomeResourcesResources
 
@@ -107,8 +107,10 @@ class HomeWidget(
         self.CustomToolBar.name = "CustomToolBar"
         slicer.util.mainWindow().insertToolBar(mainToolBar, self.CustomToolBar)
 
-        #     central = slicer.util.findChild(slicer.util.mainWindow(), name='CentralWidget')
-        #     central.setStyleSheet("background-color: #464449")
+        # centralaa = slicer.util.findChild(
+        #     slicer.util.mainWindow(), name="CentralWidget"
+        # )
+        # central.setStyleSheet("background-color: #464449")
 
         gearIcon = qt.QIcon(self.resourcePath("Icons/Gears.png"))
         self.settingsAction = self.CustomToolBar.addAction(gearIcon, "")
@@ -168,8 +170,9 @@ class HomeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
 
     def exitApplication(self, status=slicer.util.EXIT_SUCCESS, message=None):
         """Exit application.
-        If ``status`` is ``slicer.util.EXIT_SUCCESS``, ``message`` is logged using ``logging.info(message)``
-        otherwise it is logged using ``logging.error(message)``.
+        If ``status`` is ``slicer.util.EXIT_SUCCESS``, ``message`` is logged using
+        ``logging.info(message)`` otherwise it is logged using
+        ``logging.error(message)``.
         """
 
         def _exitApplication():
@@ -199,7 +202,8 @@ class HomeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
             sliceWidget = slicer.app.layoutManager().sliceWidget(name)
             self.setupSliceViewer(sliceWidget)
 
-        # Set linked slice views  in all existing slice composite nodes and in the default node
+        # Set linked slice views in all existing slice composite nodes and in the
+        # default node
         sliceCompositeNodes = slicer.util.getNodesByClass("vtkMRMLSliceCompositeNode")
         defaultSliceCompositeNode = slicer.mrmlScene.GetDefaultNodeByClass(
             "vtkMRMLSliceCompositeNode"
@@ -208,9 +212,9 @@ class HomeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
             defaultSliceCompositeNode = slicer.mrmlScene.CreateNodeByClass(
                 "vtkMRMLSliceCompositeNode"
             )
-            defaultSliceCompositeNode.UnRegister(
-                None
-            )  # CreateNodeByClass is factory method, need to unregister the result to prevent memory leaks
+            # CreateNodeByClass is factory method, need to unregister the result to
+            # prevent memory leaks:
+            defaultSliceCompositeNode.UnRegister(None)
             slicer.mrmlScene.AddDefaultNode(defaultSliceCompositeNode)
         sliceCompositeNodes.append(defaultSliceCompositeNode)
         for sliceCompositeNode in sliceCompositeNodes:
@@ -234,7 +238,8 @@ class HomeTest(slicer.ScriptedLoadableModule.ScriptedLoadableModuleTest):
     """
 
     def setUp(self):
-        """Do whatever is needed to reset the state - typically a scene clear will be enough."""
+        """Do whatever is needed to reset the state - typically a scene clear will be
+        enough."""
         slicer.mrmlScene.Clear(0)
 
     def runTest(self):

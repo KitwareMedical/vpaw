@@ -1,7 +1,8 @@
 import logging
+import os
 import slicer
 import slicer.ScriptedLoadableModule
-import slicer.util.VTKObservationMixin
+import slicer.util
 import vtk
 
 
@@ -29,7 +30,8 @@ class VPAWVisualize(slicer.ScriptedLoadableModule.ScriptedLoadableModule):
             "Ebrahim Ebrahim (Kitware, Inc.)",
             "Lee Newberg (Kitware, Inc.)",
         ]
-        # TODO: update with short description of the module and a link to online module documentation
+        # TODO: update with short description of the module and a link to online module
+        # documentation
         self.parent.helpText = """
 This is the scripted loadable module named VPAW Visualize.  See more information in
 <a href="https://github.com/KitwareMedical/vpaw#VPAWVisualize">module documentation</a>.
@@ -82,9 +84,8 @@ class VPAWVisualizeWidget(
         slicer.ScriptedLoadableModule.ScriptedLoadableModuleWidget.__init__(
             self, parent
         )
-        slicer.util.VTKObservationMixin.__init__(
-            self
-        )  # needed for parameter node observation
+        # needed for parameter node observation:
+        slicer.util.VTKObservationMixin.__init__(self)
         self.logic = None
         self._parameterNode = None
         self._updatingGUIFromParameterNode = False
@@ -123,20 +124,11 @@ class VPAWVisualizeWidget(
 
         # These connections ensure that whenever user changes some settings on the GUI,
         # that is saved in the MRML scene (in the selected parameter node).
-        self.ui.inputSelector.connect(
-            "currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI
+        self.ui.DataDirectory.connect(
+            "currentPathChanged(const QString&)", self.updateParameterNodeFromGUI
         )
-        self.ui.outputSelector.connect(
-            "currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI
-        )
-        self.ui.imageThresholdSliderWidget.connect(
-            "valueChanged(double)", self.updateParameterNodeFromGUI
-        )
-        self.ui.invertOutputCheckBox.connect(
-            "toggled(bool)", self.updateParameterNodeFromGUI
-        )
-        self.ui.invertedOutputSelector.connect(
-            "currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI
+        self.ui.PatientPrefix.connect(
+            "textChanged(const QString&)", self.updateParameterNodeFromGUI
         )
 
         # Buttons
@@ -196,22 +188,10 @@ class VPAWVisualizeWidget(
 
         self.setParameterNode(self.logic.getParameterNode())
 
-        # Select default input nodes if nothing is selected yet to save a few clicks for
-        # the user
-        if not self._parameterNode.GetNodeReference("InputVolume"):
-            firstVolumeNode = slicer.mrmlScene.GetFirstNodeByClass(
-                "vtkMRMLScalarVolumeNode"
-            )
-            if firstVolumeNode:
-                self._parameterNode.SetNodeReferenceID(
-                    "InputVolume", firstVolumeNode.GetID()
-                )
-
     def setParameterNode(self, inputParameterNode):
         """
-        Set and observe parameter node.
-        Observation is needed because when the parameter node is changed then the GUI
-        must be updated immediately.
+        Set and observe parameter node.  Observation is needed because when the
+        parameter node is changed then the GUI must be updated immediately.
         """
 
         if inputParameterNode:
@@ -252,31 +232,16 @@ class VPAWVisualizeWidget(
         self._updatingGUIFromParameterNode = True
 
         # Update node selectors and sliders
-        self.ui.inputSelector.setCurrentNode(
-            self._parameterNode.GetNodeReference("InputVolume")
+        self.ui.DataDirectory.currentPath = str(
+            self._parameterNode.GetParameter("DataDirectory")
         )
-        self.ui.outputSelector.setCurrentNode(
-            self._parameterNode.GetNodeReference("OutputVolume")
-        )
-        self.ui.invertedOutputSelector.setCurrentNode(
-            self._parameterNode.GetNodeReference("OutputVolumeInverse")
-        )
-        self.ui.imageThresholdSliderWidget.value = float(
-            self._parameterNode.GetParameter("Threshold")
-        )
-        self.ui.invertOutputCheckBox.checked = (
-            self._parameterNode.GetParameter("Invert") == "true"
+        self.ui.PatientPrefix.text = str(
+            self._parameterNode.GetParameter("PatientPrefix")
         )
 
         # Update buttons states and tooltips
-        if self._parameterNode.GetNodeReference(
-            "InputVolume"
-        ) and self._parameterNode.GetNodeReference("OutputVolume"):
-            self.ui.applyButton.toolTip = "Compute output volume"
-            self.ui.applyButton.enabled = True
-        else:
-            self.ui.applyButton.toolTip = "Select input and output volume nodes"
-            self.ui.applyButton.enabled = False
+        # !!! Gray out button ....enabled = False and change ....toolTip based upon
+        # !!! whether DataDirectory is sensible
 
         # All the GUI updates are done
         self._updatingGUIFromParameterNode = False
@@ -295,20 +260,11 @@ class VPAWVisualizeWidget(
             self._parameterNode.StartModify()
         )  # Modify all properties in a single batch
 
-        self._parameterNode.SetNodeReferenceID(
-            "InputVolume", self.ui.inputSelector.currentNodeID
-        )
-        self._parameterNode.SetNodeReferenceID(
-            "OutputVolume", self.ui.outputSelector.currentNodeID
+        self._parameterNode.SetParameter(
+            "DataDirectory", str(self.ui.DataDirectory.currentPath)
         )
         self._parameterNode.SetParameter(
-            "Threshold", str(self.ui.imageThresholdSliderWidget.value)
-        )
-        self._parameterNode.SetParameter(
-            "Invert", "true" if self.ui.invertOutputCheckBox.checked else "false"
-        )
-        self._parameterNode.SetNodeReferenceID(
-            "OutputVolumeInverse", self.ui.invertedOutputSelector.currentNodeID
+            "PatientPrefix", str(self.ui.PatientPrefix.text)
         )
 
         self._parameterNode.EndModify(wasModified)
@@ -323,23 +279,8 @@ class VPAWVisualizeWidget(
 
             # Compute output
             self.logic.process(
-                self.ui.inputSelector.currentNode(),
-                self.ui.outputSelector.currentNode(),
-                self.ui.imageThresholdSliderWidget.value,
-                self.ui.invertOutputCheckBox.checked,
+                self.ui.DataDirectory.currentPath, self.ui.PatientPrefix.text
             )
-
-            # Compute inverted output (if needed)
-            if self.ui.invertedOutputSelector.currentNode():
-                # If additional output volume is selected then result with inverted
-                # threshold is written there
-                self.logic.process(
-                    self.ui.inputSelector.currentNode(),
-                    self.ui.invertedOutputSelector.currentNode(),
-                    self.ui.imageThresholdSliderWidget.value,
-                    not self.ui.invertOutputCheckBox.checked,
-                    showResult=False,
-                )
 
 
 #
@@ -371,49 +312,63 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         if not parameterNode.GetParameter("Invert"):
             parameterNode.SetParameter("Invert", "false")
 
-    def process(
-        self, inputVolume, outputVolume, imageThreshold, invert=False, showResult=True
-    ):
+    def process(self, dataDirectory, patientPrefix):
         """
         Run the processing algorithm.
         Can be used without GUI widget.
-        :param inputVolume: volume to be thresholded
-        :param outputVolume: thresholding result
-        :param imageThreshold: values above/below this threshold will be set to 0
-        :param invert: if True then values above the threshold will be set to 0,
-               otherwise values below are set to 0
-        :param showResult: show output volume in slice viewers
+        :param dataDirectory: root directory containing data
+        :param patientPrefix: prefix string for selecting which files are relevant
         """
 
-        if not inputVolume or not outputVolume:
-            raise ValueError("Input or output volume is invalid")
+        if not dataDirectory or not patientPrefix:
+            raise ValueError("Data directory or patient prefix is invalid")
 
         import time
 
         startTime = time.time()
         logging.info("Processing started")
 
-        # Compute the thresholded output volume using the "Threshold Scalar Volume" CLI
-        # module
-        cliParams = {
-            "InputVolume": inputVolume.GetID(),
-            "OutputVolume": outputVolume.GetID(),
-            "ThresholdValue": imageThreshold,
-            "ThresholdType": "Above" if invert else "Below",
-        }
-        cliNode = slicer.cli.run(
-            slicer.modules.thresholdscalarvolume,
-            None,
-            cliParams,
-            wait_for_completion=True,
-            update_display=showResult,
-        )
-        # We don't need the CLI module node anymore, remove it to not clutter the scene
-        # with it
-        slicer.mrmlScene.RemoveNode(cliNode)
+        # !!! Call find_files_with_prefix, instantiate collapsed widgets (via
+        # !!! VPAWVisualizeWidget somehow -- callback?), and make contents for them.
 
         stopTime = time.time()
         logging.info(f"Processing completed in {stopTime-startTime:.2f} seconds")
+
+    def find_files_with_prefix(self, path, prefix):
+        """Find all file names within `path` recursively that start with `prefix`
+
+        Parameters
+        ----------
+        path : str
+            Initially, the top-level directory to be scanned for files.  For recursive
+            calls, it will be a directory or file within the top-level directory's
+            hierarchy.
+        prefix: str
+            A value such as "1000_" will find all proper files that have basenames that
+            start with that string.  If prefix=="" then all files regardless of name
+            will be reported.
+
+        Returns
+        -------
+        When `path` is a file, returns the one-element list `[path]` if the `path`
+            basename begins with `prefix`; otherwise returns an empty list.
+        When `path` is a directory, returns the concatenation of the lists generated by
+            a recursive call to find_files_with_prefix for each entry in the directory.
+
+        """
+        if os.path.isdir(path):
+            # This `path` is a directory.  Recurse to all files and directories within
+            # `path` and flatten the responses into a single list.
+            response = [
+                item
+                for sub in os.listdir(path)
+                for item in self.find_files_with_prefix(os.path.join(path, sub), prefix)
+            ]
+        else:
+            # This path is not a directory.  Return a list containting the path if the
+            # path basename begins with `prefix`, otherwise return an empty list.
+            response = [p for p in (path,) if os.path.basename(p).startswith(prefix)]
+        return response
 
 
 #
