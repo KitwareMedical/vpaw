@@ -16,16 +16,19 @@
      <property name="text">
       <string>Patient Browser</string>
      </property>
-     <layout class="QFormLayout" name="formLayout_2">
+     <property name="collapsed">
+      <bool>false</bool>
+     </property>
+     <layout class="QFormLayout" name="inputsFormLayout">
       <item row="0" column="0">
-       <widget class="QLabel" name="label">
+       <widget class="QLabel" name="dataDirectoryLabel">
         <property name="text">
          <string>Data directory</string>
         </property>
        </widget>
       </item>
-      <item row="2" column="0">
-       <widget class="QLabel" name="label_3">
+      <item row="1" column="0">
+       <widget class="QLabel" name="patientPrefixLabel">
         <property name="text">
          <string>Patient prefix</string>
         </property>
@@ -38,30 +41,9 @@
         </property>
        </widget>
       </item>
-      <item row="2" column="1">
+      <item row="1" column="1">
        <widget class="QLineEdit" name="PatientPrefix"/>
       </item>
-     </layout>
-    </widget>
-   </item>
-   <item>
-    <widget class="ctkCollapsibleButton" name="outputsCollapsibleButton">
-     <property name="text">
-      <string>Outputs</string>
-     </property>
-     <layout class="QFormLayout" name="formLayout_4">
-     </layout>
-    </widget>
-   </item>
-   <item>
-    <widget class="ctkCollapsibleButton" name="advancedCollapsibleButton">
-     <property name="text">
-      <string>Advanced</string>
-     </property>
-     <property name="collapsed">
-      <bool>true</bool>
-     </property>
-     <layout class="QFormLayout" name="formLayout_3">
      </layout>
     </widget>
    </item>
@@ -71,11 +53,23 @@
       <bool>false</bool>
      </property>
      <property name="toolTip">
-      <string>Run the algorithm.</string>
+      <string>Show files</string>
      </property>
      <property name="text">
-      <string>Apply</string>
+      <string>Show</string>
      </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="ctkCollapsibleButton" name="outputsCollapsibleButton">
+     <property name="text">
+      <string>Outputs</string>
+     </property>
+     <property name="collapsed">
+      <bool>false</bool>
+     </property>
+     <layout class="QFormLayout" name="outputsFormLayout">
+     </layout>
     </widget>
    </item>
    <item>
