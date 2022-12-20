@@ -1,5 +1,7 @@
+import ctk
 import logging
 import os
+import qt
 import slicer
 import slicer.ScriptedLoadableModule
 import slicer.util
@@ -232,16 +234,22 @@ class VPAWVisualizeWidget(
         self._updatingGUIFromParameterNode = True
 
         # Update node selectors and sliders
-        self.ui.DataDirectory.currentPath = str(
-            self._parameterNode.GetParameter("DataDirectory")
+        self.ui.DataDirectory.currentPath = self._parameterNode.GetParameter(
+            "DataDirectory"
         )
-        self.ui.PatientPrefix.text = str(
-            self._parameterNode.GetParameter("PatientPrefix")
-        )
+        self.ui.PatientPrefix.text = self._parameterNode.GetParameter("PatientPrefix")
 
         # Update buttons states and tooltips
-        # !!! Gray out button ....enabled = False and change ....toolTip based upon
-        # !!! whether DataDirectory is sensible
+        if os.path.isdir(self.ui.DataDirectory.currentPath):
+            # Enable apply button
+            self.ui.applyButton.toolTip = (
+                "Show files from {self.ui.DataDirectory.currentPath}"
+            )
+            self.ui.applyButton.enabled = True
+        else:
+            # Disable apply button
+            self.ui.applyButton.toolTip = "First, select valid data directory"
+            self.ui.applyButton.enabled = False
 
         # All the GUI updates are done
         self._updatingGUIFromParameterNode = False
@@ -261,11 +269,9 @@ class VPAWVisualizeWidget(
         )  # Modify all properties in a single batch
 
         self._parameterNode.SetParameter(
-            "DataDirectory", str(self.ui.DataDirectory.currentPath)
+            "DataDirectory", self.ui.DataDirectory.currentPath
         )
-        self._parameterNode.SetParameter(
-            "PatientPrefix", str(self.ui.PatientPrefix.text)
-        )
+        self._parameterNode.SetParameter("PatientPrefix", self.ui.PatientPrefix.text)
 
         self._parameterNode.EndModify(wasModified)
 
@@ -278,9 +284,44 @@ class VPAWVisualizeWidget(
         ):
 
             # Compute output
-            self.logic.process(
+            list_of_files = self.logic.process(
                 self.ui.DataDirectory.currentPath, self.ui.PatientPrefix.text
             )
+            # Display output
+            self.updateOutputWidgets(list_of_files)
+
+    def clearOutputWidgets(self):
+        outputsFormLayout = self.ui.outputsCollapsibleButton.layout()
+        # Clear away the current output widgets
+        for row_number in reversed(range(outputsFormLayout.rowCount())):
+            # !!! Do we need to delete (recursively) the widgets themselves before we
+            # !!! delete the row from the layout?  Or, is Python garbage collection
+            # !!! sufficient?
+            outputsFormLayout.removeRow(row_number)
+
+    def updateOutputWidgets(self, list_of_files):
+        self.clearOutputWidgets()
+
+        outputsFormLayout = self.ui.outputsCollapsibleButton.layout()
+        for file in list_of_files:
+            try:
+                # Collapsible contains Layout contains Label contains Pixmap
+                fileCollapsible = ctk.ctkCollapsibleButton()
+                fileCollapsible.text = file
+                fileCollapsible.collapsed = True
+                fileLayout = qt.QFormLayout(fileCollapsible)
+                fileLabel = qt.QLabel()
+                fileLabel.setText(file)
+                filePixmap = qt.QPixmap()
+                if not filePixmap.load(file):
+                    raise RuntimeError(f"Could not load pixmap from file {repr(file)}")
+                pixmap_width = max(100, self.layout.geometry().width())
+
+                fileLabel.setPixmap(filePixmap.scaledToWidth(pixmap_width))
+                fileLayout.addRow(fileLabel)
+                outputsFormLayout.addRow(fileCollapsible)
+            except Exception:
+                print(f"Could not show file {repr(file)}")
 
 
 #
@@ -320,19 +361,28 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         :param patientPrefix: prefix string for selecting which files are relevant
         """
 
-        if not dataDirectory or not patientPrefix:
-            raise ValueError("Data directory or patient prefix is invalid")
+        if not (isinstance(dataDirectory, str) and os.path.isdir(dataDirectory)):
+            raise ValueError(
+                f"Data directory (value={repr(dataDirectory)}) is not valid"
+            )
+        if not (patientPrefix is None or isinstance(patientPrefix, str)):
+            raise ValueError(
+                f"Patient prefix (value={repr(patientPrefix)}) is not valid"
+            )
+        if patientPrefix is None:
+            patientPrefix = ""
 
         import time
 
         startTime = time.time()
         logging.info("Processing started")
 
-        # !!! Call find_files_with_prefix, instantiate collapsed widgets (via
-        # !!! VPAWVisualizeWidget somehow -- callback?), and make contents for them.
+        list_of_files = self.find_files_with_prefix(dataDirectory, patientPrefix)
 
         stopTime = time.time()
         logging.info(f"Processing completed in {stopTime-startTime:.2f} seconds")
+
+        return list_of_files
 
     def find_files_with_prefix(self, path, prefix):
         """Find all file names within `path` recursively that start with `prefix`
