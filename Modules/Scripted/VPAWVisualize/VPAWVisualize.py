@@ -1,7 +1,5 @@
-import ctk
 import logging
 import os
-import qt
 import slicer
 import slicer.ScriptedLoadableModule
 import slicer.util
@@ -91,6 +89,7 @@ class VPAWVisualizeWidget(
         self.logic = None
         self._parameterNode = None
         self._updatingGUIFromParameterNode = False
+        self.clearOutputWidgets()
 
     def setup(self):
         """
@@ -138,6 +137,8 @@ class VPAWVisualizeWidget(
 
         # Make sure parameter node is initialized (needed for module reload)
         self.initializeParameterNode()
+
+        self.ui.subjectHierarchyTree.setMRMLScene(slicer.mrmlScene)  # Needed?!!!
 
     def cleanup(self):
         """
@@ -288,40 +289,76 @@ class VPAWVisualizeWidget(
                 self.ui.DataDirectory.currentPath, self.ui.PatientPrefix.text
             )
             # Display output
-            self.updateOutputWidgets(list_of_files)
+            self.clearOutputWidgets()
+            self.addOutputWidgets(list_of_files)
 
     def clearOutputWidgets(self):
-        outputsFormLayout = self.ui.outputsCollapsibleButton.layout()
-        # Clear away the current output widgets
-        for row_number in reversed(range(outputsFormLayout.rowCount())):
-            # !!! Do we need to delete (recursively) the widgets themselves before we
-            # !!! delete the row from the layout?  Or, is Python garbage collection
-            # !!! sufficient?
-            outputsFormLayout.removeRow(row_number)
+        slicer.mrmlScene.Clear()
 
-    def updateOutputWidgets(self, list_of_files):
-        self.clearOutputWidgets()
+    def addOutputWidgets(self, list_of_files):
+        # The subject hierarchy node can contain subject (patient), study, and node
+        # items.  slicer.mrmlScene knows how to find the subject hierarchy node.
+        shNode = slicer.mrmlScene.GetSubjectHierarchyNode()
+        # A subject item is created with the subject hierarchy node as its parent.
+        subjectItem = shNode.CreateSubjectItem(
+            shNode.GetSceneItemID(), self.ui.PatientPrefix.text
+        )
+        # A study item is created with the subject item as its parent.
+        studyItem = shNode.CreateStudyItem(subjectItem, self.ui.PatientPrefix.text)
 
-        outputsFormLayout = self.ui.outputsCollapsibleButton.layout()
-        for file in list_of_files:
-            try:
-                # Collapsible contains Layout contains Label contains Pixmap
-                fileCollapsible = ctk.ctkCollapsibleButton()
-                fileCollapsible.text = file
-                fileCollapsible.collapsed = True
-                fileLayout = qt.QFormLayout(fileCollapsible)
-                fileLabel = qt.QLabel()
-                fileLabel.setText(file)
-                filePixmap = qt.QPixmap()
-                if not filePixmap.load(file):
-                    raise RuntimeError(f"Could not load pixmap from file {repr(file)}")
-                pixmap_width = max(100, self.layout.geometry().width())
+        # slicer knows how to find the subject hierarchy tree view.
+        widget = slicer.qMRMLSubjectHierarchyTreeView()
+        # Tell the subject hierarchy tree view about its enclosing scene.
+        widget.setMRMLScene(slicer.mrmlScene)
+        # Tell the subject hierarchy tree view that its root item is the subject item.
+        widget.setRootItem(subjectItem)
 
-                fileLabel.setPixmap(filePixmap.scaledToWidth(pixmap_width))
-                fileLayout.addRow(fileLabel)
-                outputsFormLayout.addRow(fileCollapsible)
-            except Exception:
-                print(f"Could not show file {repr(file)}")
+        # The node types supported by 3D Slicer generally can be found with fgrep
+        # 'loadNodeFromFile(filename' from
+        # https://github.com/Slicer/Slicer/blob/main/Base/Python/slicer/util.py.
+        # Currently they are AnnotationFile, ColorTableFile, FiberBundleFile,
+        # MarkupsFile, ModelFile, ScalarOverlayFile, SegmentationFile,
+        # ShaderPropertyFile, TableFile, TextFile, TransformFile, and VolumeFile.
+
+        for filename in list_of_files:
+            # Determine the node type from the filename extension, using its
+            # immediate-ancestor directory's name if necessary.  Note: check for
+            # ".seg.nrrd" before checking for ".nrrd".
+            file_string = repr(os.path.basename(filename))
+            if filename.endswith(".p3") or filename.endswith(".xls"):
+                print(f"File type for {file_string} is not currently supported")
+                continue
+
+            print(f"Loading filename {file_string}")
+
+            if filename.endswith(".seg.nrrd"):
+                node = slicer.util.loadSegmentation(filename)
+            elif filename.endswith(".nrrd"):
+                directory = os.path.basename(os.path.dirname(filename))
+                if directory == "segmentations_computed":
+                    node = slicer.util.loadSegmentation(filename)
+                elif directory == "images":
+                    node = slicer.util.loadVolume(filename)
+                else:
+                    # Guess
+                    node = slicer.util.loadVolume(filename)
+            elif filename.endswith(".fcsv"):
+                node = slicer.util.loadMarkups(filename)
+            elif filename.endswith(".mha"):
+                node = slicer.util.loadVolume(filename)
+            elif filename.endswith(".png"):
+                node = slicer.util.loadVolume(filename)
+            else:
+                print(f"File type for {file_string} is not recognized")
+                continue
+
+            nodeItem = shNode.GetItemByDataNode(node)
+            # The node item is assigned the study item as its parent.
+            shNode.SetItemParent(nodeItem, studyItem)
+
+        # Refresh the subject hierarchy tree view
+        print("All files loaded")
+        widget.show()
 
 
 #
