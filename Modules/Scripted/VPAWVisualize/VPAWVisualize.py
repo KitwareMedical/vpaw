@@ -293,7 +293,8 @@ class VPAWVisualizeWidget(
             self.addOutputWidgets(list_of_files)
 
     def clearOutputWidgets(self):
-        slicer.mrmlScene.Clear()
+        shNode = slicer.mrmlScene.GetSubjectHierarchyNode()
+        shNode.RemoveAllItems(True)
 
     def addOutputWidgets(self, list_of_files):
         # The subject hierarchy node can contain subject (patient), study, and node
@@ -305,6 +306,7 @@ class VPAWVisualizeWidget(
         )
         # A study item is created with the subject item as its parent.
         studyItem = shNode.CreateStudyItem(subjectItem, self.ui.PatientPrefix.text)
+        shNode.SetItemExpanded(studyItem, True)
 
         # slicer knows how to find the subject hierarchy tree view.
         widget = slicer.qMRMLSubjectHierarchyTreeView()
@@ -312,6 +314,7 @@ class VPAWVisualizeWidget(
         widget.setMRMLScene(slicer.mrmlScene)
         # Tell the subject hierarchy tree view that its root item is the subject item.
         widget.setRootItem(subjectItem)
+        shNode.SetItemExpanded(subjectItem, True)
 
         # The node types supported by 3D Slicer generally can be found with fgrep
         # 'loadNodeFromFile(filename' from
@@ -330,24 +333,26 @@ class VPAWVisualizeWidget(
                 continue
 
             print(f"Loading filename {file_string}")
+            props = {"name": os.path.basename(filename), "singleFile": True}
+            kwargs = {"filename": filename, "properties": props}
 
             if filename.endswith(".seg.nrrd"):
-                node = slicer.util.loadSegmentation(filename)
+                node = slicer.util.loadSegmentation(**kwargs)
             elif filename.endswith(".nrrd"):
                 directory = os.path.basename(os.path.dirname(filename))
                 if directory == "segmentations_computed":
-                    node = slicer.util.loadSegmentation(filename)
+                    node = slicer.util.loadSegmentation(**kwargs)
                 elif directory == "images":
-                    node = slicer.util.loadVolume(filename)
+                    node = slicer.util.loadVolume(**kwargs)
                 else:
                     # Guess
-                    node = slicer.util.loadVolume(filename)
+                    node = slicer.util.loadVolume(**kwargs)
             elif filename.endswith(".fcsv"):
                 node = slicer.util.loadMarkups(filename)
             elif filename.endswith(".mha"):
-                node = slicer.util.loadVolume(filename)
+                node = slicer.util.loadVolume(**kwargs)
             elif filename.endswith(".png"):
-                node = slicer.util.loadVolume(filename)
+                node = slicer.util.loadVolume(**kwargs)
             else:
                 print(f"File type for {file_string} is not recognized")
                 continue
@@ -356,9 +361,19 @@ class VPAWVisualizeWidget(
             # The node item is assigned the study item as its parent.
             shNode.SetItemParent(nodeItem, studyItem)
 
-        # Refresh the subject hierarchy tree view
         print("All files loaded")
-        widget.show()
+
+        # Useful functions for traversing items
+        # shNode.GetSceneItemID()
+        # shNode.GetNumberOfItems()
+        # shNode.GetNumberOfItemChildren(parentItem)
+        # shNode.GetItemByPositionUnderParent(parentItem, childIndex)
+        # shNode.SetItemExpanded(shNode.GetSceneItemID(), True)
+        # Resize columns of the SubjectHierarchyTreeView
+        widget.header().resizeSections(widget.header().ResizeToContents)
+        # Force re-displaying of the SubjectHierarchyTreeView
+        slicer.mrmlScene.StartState(slicer.vtkMRMLScene.ImportState)
+        slicer.mrmlScene.EndState(slicer.vtkMRMLScene.ImportState)
 
 
 #
@@ -414,14 +429,20 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         startTime = time.time()
         logging.info("Processing started")
 
-        list_of_files = self.find_files_with_prefix(dataDirectory, patientPrefix)
+        list_of_records = self.find_files_with_prefix(
+            dataDirectory, patientPrefix, subjectless_too=True
+        )
+        # Sort by modification time
+        list_of_records.sort(key=lambda record: record[1])
+        # Remove modification times
+        list_of_files = [record[0] for record in list_of_records]
 
         stopTime = time.time()
         logging.info(f"Processing completed in {stopTime-startTime:.2f} seconds")
 
         return list_of_files
 
-    def find_files_with_prefix(self, path, prefix):
+    def find_files_with_prefix(self, path, prefix, subjectless_too=False):
         """Find all file names within `path` recursively that start with `prefix`
 
         Parameters
@@ -434,11 +455,15 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
             A value such as "1000_" will find all proper files that have basenames that
             start with that string.  If prefix=="" then all files regardless of name
             will be reported.
+        subjectless_too: bool
+            If set to True then files not associated with any patient will also be
+            included.
 
         Returns
         -------
-        When `path` is a file, returns the one-element list `[path]` if the `path`
-            basename begins with `prefix`; otherwise returns an empty list.
+        When `path` is a file, returns the one-tuple list `[(path, mtime)]` if the
+            `path` basename begins with `prefix`; otherwise returns an empty list.
+            "mtime" is the modification time returned by os.path.getmtime(path).
         When `path` is a directory, returns the concatenation of the lists generated by
             a recursive call to find_files_with_prefix for each entry in the directory.
 
@@ -447,14 +472,28 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
             # This `path` is a directory.  Recurse to all files and directories within
             # `path` and flatten the responses into a single list.
             response = [
-                item
+                record
                 for sub in os.listdir(path)
-                for item in self.find_files_with_prefix(os.path.join(path, sub), prefix)
+                for record in self.find_files_with_prefix(
+                    os.path.join(path, sub), prefix, subjectless_too
+                )
             ]
         else:
             # This path is not a directory.  Return a list containting the path if the
             # path basename begins with `prefix`, otherwise return an empty list.
-            response = [p for p in (path,) if os.path.basename(p).startswith(prefix)]
+            response = [
+                (p, os.path.getmtime(p))
+                for p in (path,)
+                if os.path.basename(p).startswith(prefix)
+                or (
+                    subjectless_too
+                    and (
+                        "mean_landmarks" in p
+                        or "FilteredControlBlindingLogUniqueScanFiltered" in p
+                        or "weighted_perc" in p
+                    )
+                )
+            ]
         return response
 
 

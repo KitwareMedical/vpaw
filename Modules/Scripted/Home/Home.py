@@ -64,6 +64,10 @@ class HomeWidget(
         # Apply style
         self.applyApplicationStyle()
 
+        # Buttons
+        self.ui.VPAWVisualizeButton.connect("clicked(bool)", self.onVPAWVisualizeButton)
+        self.ui.VPAWModelButton.connect("clicked(bool)", self.onVPAWModelButton)
+
     def setupNodes(self):
         # Set up the layout / 3D View
         self.logic.setup3DView()
@@ -149,6 +153,24 @@ class HomeWidget(
             style = fh.read()
             for widget in widgets:
                 widget.styleSheet = style
+
+    def onVPAWVisualizeButton(self):
+        """
+        Run processing when user clicks "VPAW Visualize" button.
+        """
+        with slicer.util.tryWithErrorDisplay(
+            "Failed to compute results.", waitCursor=True
+        ):
+            slicer.util.selectModule("VPAWVisualize")
+
+    def onVPAWModelButton(self):
+        """
+        Run processing when user clicks "VPAW Model" button.
+        """
+        with slicer.util.tryWithErrorDisplay(
+            "Failed to compute results.", waitCursor=True
+        ):
+            slicer.util.selectModule("VPAWModel")
 
 
 class HomeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):

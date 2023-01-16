@@ -68,8 +68,8 @@
      <property name="collapsed">
       <bool>false</bool>
      </property>
-     <layout class="QFormLayout" name="outputsFormLayout">
-      <item>
+     <layout class="QGridLayout" name="outputsGridLayout">
+      <item row="0" column="0">
        <widget class="qMRMLSubjectHierarchyTreeView" name="subjectHierarchyTree">
         <property name="multiSelection">
          <bool>true</bool>
