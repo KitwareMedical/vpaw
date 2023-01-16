@@ -10,7 +10,34 @@
     <height>434</height>
    </rect>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout"/>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QPushButton" name="VPAWVisualizeButton">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
+     <property name="toolTip">
+      <string>VPAW Visualize</string>
+     </property>
+     <property name="text">
+      <string>VPAW Visualize</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="VPAWModelButton">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
+     <property name="toolTip">
+      <string>VPAW Model</string>
+     </property>
+     <property name="text">
+      <string>VPAW Model</string>
+     </property>
+    </widget>
+   </item>
+  </layout>
  </widget>
  <customwidgets>
   <customwidget>
