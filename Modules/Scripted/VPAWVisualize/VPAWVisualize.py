@@ -133,12 +133,14 @@ class VPAWVisualizeWidget(
         )
 
         # Buttons
+        self.ui.HomeButton.connect("clicked(bool)", self.onHomeButton)
+        self.ui.VPAWModelButton.connect("clicked(bool)", self.onVPAWModelButton)
         self.ui.applyButton.connect("clicked(bool)", self.onApplyButton)
 
         # Make sure parameter node is initialized (needed for module reload)
         self.initializeParameterNode()
 
-        self.ui.subjectHierarchyTree.setMRMLScene(slicer.mrmlScene)  # Needed?!!!
+        self.ui.subjectHierarchyTree.setMRMLScene(slicer.mrmlScene)
 
     def cleanup(self):
         """
@@ -276,6 +278,24 @@ class VPAWVisualizeWidget(
 
         self._parameterNode.EndModify(wasModified)
 
+    def onHomeButton(self):
+        """
+        Run processing when user clicks "Home" button.
+        """
+        with slicer.util.tryWithErrorDisplay(
+            "Failed to compute results.", waitCursor=True
+        ):
+            slicer.util.selectModule("Home")
+
+    def onVPAWModelButton(self):
+        """
+        Run processing when user clicks "VPAW Model" button.
+        """
+        with slicer.util.tryWithErrorDisplay(
+            "Failed to compute results.", waitCursor=True
+        ):
+            slicer.util.selectModule("VPAWModel")
+
     def onApplyButton(self):
         """
         Run processing when user clicks "Apply" button.
@@ -295,27 +315,9 @@ class VPAWVisualizeWidget(
     def clearOutputWidgets(self):
         shNode = slicer.mrmlScene.GetSubjectHierarchyNode()
         shNode.RemoveAllItems(True)
+        self.show_node_item = None
 
-    def addOutputWidgets(self, list_of_files):
-        # The subject hierarchy node can contain subject (patient), study, and node
-        # items.  slicer.mrmlScene knows how to find the subject hierarchy node.
-        shNode = slicer.mrmlScene.GetSubjectHierarchyNode()
-        # A subject item is created with the subject hierarchy node as its parent.
-        subjectItem = shNode.CreateSubjectItem(
-            shNode.GetSceneItemID(), self.ui.PatientPrefix.text
-        )
-        # A study item is created with the subject item as its parent.
-        studyItem = shNode.CreateStudyItem(subjectItem, self.ui.PatientPrefix.text)
-        shNode.SetItemExpanded(studyItem, True)
-
-        # slicer knows how to find the subject hierarchy tree view.
-        widget = slicer.qMRMLSubjectHierarchyTreeView()
-        # Tell the subject hierarchy tree view about its enclosing scene.
-        widget.setMRMLScene(slicer.mrmlScene)
-        # Tell the subject hierarchy tree view that its root item is the subject item.
-        widget.setRootItem(subjectItem)
-        shNode.SetItemExpanded(subjectItem, True)
-
+    def addOutputWidget(self, shNode, subject_item, filename):
         # The node types supported by 3D Slicer generally can be found with fgrep
         # 'loadNodeFromFile(filename' from
         # https://github.com/Slicer/Slicer/blob/main/Base/Python/slicer/util.py.
@@ -323,52 +325,94 @@ class VPAWVisualizeWidget(
         # MarkupsFile, ModelFile, ScalarOverlayFile, SegmentationFile,
         # ShaderPropertyFile, TableFile, TextFile, TransformFile, and VolumeFile.
 
-        for filename in list_of_files:
-            # Determine the node type from the filename extension, using its
-            # immediate-ancestor directory's name if necessary.  Note: check for
-            # ".seg.nrrd" before checking for ".nrrd".
-            file_string = repr(os.path.basename(filename))
-            if filename.endswith(".p3") or filename.endswith(".xls"):
-                print(f"File type for {file_string} is not currently supported")
-                continue
+        # Determine the node type from the filename extension, using its
+        # immediate-ancestor directory's name if necessary.  Note: check for
+        # ".seg.nrrd" before checking for ".nrrd".
+        basename = os.path.basename(filename)
+        basename_repr = repr(basename)
+        if filename.endswith(".p3") or filename.endswith(".xls"):
+            print(f"File type for {basename_repr} is not currently supported")
+            return
 
-            print(f"Loading filename {file_string}")
-            props = {"name": os.path.basename(filename), "singleFile": True}
-            kwargs = {"filename": filename, "properties": props}
+        props = {"name": basename, "singleFile": True, "show": False}
 
-            if filename.endswith(".seg.nrrd"):
-                node = slicer.util.loadSegmentation(**kwargs)
-            elif filename.endswith(".nrrd"):
-                directory = os.path.basename(os.path.dirname(filename))
-                if directory == "segmentations_computed":
-                    node = slicer.util.loadSegmentation(**kwargs)
-                elif directory == "images":
-                    node = slicer.util.loadVolume(**kwargs)
-                else:
-                    # Guess
-                    node = slicer.util.loadVolume(**kwargs)
-            elif filename.endswith(".fcsv"):
-                node = slicer.util.loadMarkups(filename)
-            elif filename.endswith(".mha"):
-                node = slicer.util.loadVolume(**kwargs)
-            elif filename.endswith(".png"):
-                node = slicer.util.loadVolume(**kwargs)
+        show_node = None
+        if filename.endswith(".seg.nrrd"):
+            node = slicer.util.loadSegmentation(filename, properties=props)
+        elif filename.endswith(".nrrd"):
+            directory = os.path.basename(os.path.dirname(filename))
+            if directory == "segmentations_computed":
+                node = slicer.util.loadSegmentation(filename, properties=props)
+            elif directory == "images":
+                node = slicer.util.loadVolume(filename, properties=props)
+                if self.show_node_item is None:
+                    show_node = node
             else:
-                print(f"File type for {file_string} is not recognized")
-                continue
+                # Guess
+                node = slicer.util.loadVolume(filename, properties=props)
+        elif filename.endswith(".fcsv"):
+            node = slicer.util.loadMarkups(filename)
+        elif filename.endswith(".mha"):
+            node = slicer.util.loadVolume(filename, properties=props)
+        elif filename.endswith(".png"):
+            node = slicer.util.loadVolume(filename, properties=props)
+        else:
+            print(f"File type for {basename_repr} is not recognized")
+            return
 
-            nodeItem = shNode.GetItemByDataNode(node)
-            # The node item is assigned the study item as its parent.
-            shNode.SetItemParent(nodeItem, studyItem)
+        node_item = shNode.GetItemByDataNode(node)
+        if show_node is not None:
+            self.show_node_item = node_item
+        # The node item is assigned the subject item as its parent.
+        shNode.SetItemParent(node_item, subject_item)
+        return
 
-        print("All files loaded")
+    def addOutputWidgets(self, list_of_files):
+        # The subject hierarchy node can contain subject (patient), study, and node
+        # items.  slicer.mrmlScene knows how to find the subject hierarchy node.
+        shNode = slicer.mrmlScene.GetSubjectHierarchyNode()
+        # A subject item is created with the subject hierarchy node as its parent.
+        subject_name = (
+            self.ui.PatientPrefix.text if self.ui.PatientPrefix.text != "" else "All"
+        )
+        subject_item = shNode.CreateSubjectItem(shNode.GetSceneItemID(), subject_name)
 
-        # Useful functions for traversing items
-        # shNode.GetSceneItemID()
-        # shNode.GetNumberOfItems()
-        # shNode.GetNumberOfItemChildren(parentItem)
-        # shNode.GetItemByPositionUnderParent(parentItem, childIndex)
-        # shNode.SetItemExpanded(shNode.GetSceneItemID(), True)
+        # slicer knows how to find the subject hierarchy tree view.
+        widget = slicer.qMRMLSubjectHierarchyTreeView()
+        # Tell the subject hierarchy tree view about its enclosing scene.
+        widget.setMRMLScene(slicer.mrmlScene)
+        # Tell the subject hierarchy tree view that its root item is the subject item.
+        widget.setRootItem(subject_item)
+
+        for filename in list_of_files:
+            self.addOutputWidget(shNode, subject_item, filename)
+
+        # Recursively set visibility and expanded properties of each item
+        def recurseVisibility(item, visibility, expanded):
+            print(f"recurseVisibility({item}, {visibility}, {expanded}) called")
+            # Useful functions for traversing items
+            # shNode.GetSceneItemID()
+            # shNode.GetNumberOfItems()
+            # shNode.GetNumberOfItemChildren(parentItem)
+            # shNode.GetItemByPositionUnderParent(parentItem, childIndex)
+            # shNode.SetItemExpanded(shNode.GetSceneItemID(), True)
+            if item == self.show_node_item:
+                # Show this item and any descendants
+                # !!! visibility=True isn't working !!!
+                print(f"{self.show_node_item = }")
+                visibility = True
+                expanded = True
+            shNode.SetItemDisplayVisibility(item, visibility)
+            for child_index in range(shNode.GetNumberOfItemChildren(item)):
+                recurseVisibility(
+                    shNode.GetItemByPositionUnderParent(item, child_index),
+                    visibility,
+                    expanded,
+                )
+                shNode.SetItemExpanded(item, expanded)
+
+        recurseVisibility(subject_item, False, False)
+
         # Resize columns of the SubjectHierarchyTreeView
         widget.header().resizeSections(widget.header().ResizeToContents)
         # Force re-displaying of the SubjectHierarchyTreeView

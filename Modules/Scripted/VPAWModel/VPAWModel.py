@@ -140,6 +140,8 @@ class VPAWModelWidget(
         )
 
         # Buttons
+        self.ui.HomeButton.connect("clicked(bool)", self.onHomeButton)
+        self.ui.VPAWVisualizeButton.connect("clicked(bool)", self.onVPAWVisualizeButton)
         self.ui.applyButton.connect("clicked(bool)", self.onApplyButton)
 
         # Make sure parameter node is initialized (needed for module reload)
@@ -311,6 +313,24 @@ class VPAWModelWidget(
         )
 
         self._parameterNode.EndModify(wasModified)
+
+    def onHomeButton(self):
+        """
+        Run processing when user clicks "Home" button.
+        """
+        with slicer.util.tryWithErrorDisplay(
+            "Failed to compute results.", waitCursor=True
+        ):
+            slicer.util.selectModule("Home")
+
+    def onVPAWVisualizeButton(self):
+        """
+        Run processing when user clicks "VPAW Visualize" button.
+        """
+        with slicer.util.tryWithErrorDisplay(
+            "Failed to compute results.", waitCursor=True
+        ):
+            slicer.util.selectModule("VPAWVisualize")
 
     def onApplyButton(self):
         """
