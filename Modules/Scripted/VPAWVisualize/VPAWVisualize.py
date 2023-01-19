@@ -313,9 +313,8 @@ class VPAWVisualizeWidget(
             self.addOutputWidgets(list_of_files)
 
     def clearOutputWidgets(self):
-        shNode = slicer.mrmlScene.GetSubjectHierarchyNode()
-        shNode.RemoveAllItems(True)
-        self.show_node_item = None
+        slicer.mrmlScene.GetSubjectHierarchyNode().RemoveAllItems(True)
+        self.show_nodes = list()
 
     def addOutputWidget(self, shNode, subject_item, filename):
         # The node types supported by 3D Slicer generally can be found with fgrep
@@ -336,17 +335,15 @@ class VPAWVisualizeWidget(
 
         props = {"name": basename, "singleFile": True, "show": False}
 
-        show_node = None
         if filename.endswith(".seg.nrrd"):
             node = slicer.util.loadSegmentation(filename, properties=props)
         elif filename.endswith(".nrrd"):
             directory = os.path.basename(os.path.dirname(filename))
-            if directory == "segmentations_computed":
-                node = slicer.util.loadSegmentation(filename, properties=props)
-            elif directory == "images":
+            if directory == "images":
                 node = slicer.util.loadVolume(filename, properties=props)
-                if self.show_node_item is None:
-                    show_node = node
+                self.show_nodes.append(node)
+            elif directory == "segmentations_computed":
+                node = slicer.util.loadSegmentation(filename, properties=props)
             else:
                 # Guess
                 node = slicer.util.loadVolume(filename, properties=props)
@@ -361,15 +358,14 @@ class VPAWVisualizeWidget(
             return
 
         node_item = shNode.GetItemByDataNode(node)
-        if show_node is not None:
-            self.show_node_item = node_item
         # The node item is assigned the subject item as its parent.
         shNode.SetItemParent(node_item, subject_item)
         return
 
     def addOutputWidgets(self, list_of_files):
-        # The subject hierarchy node can contain subject (patient), study, and node
-        # items.  slicer.mrmlScene knows how to find the subject hierarchy node.
+        # The subject hierarchy node can contain subject (patient), study (optionally),
+        # and node items.  slicer.mrmlScene knows how to find the subject hierarchy
+        # node.
         shNode = slicer.mrmlScene.GetSubjectHierarchyNode()
         # A subject item is created with the subject hierarchy node as its parent.
         subject_name = (
@@ -378,46 +374,43 @@ class VPAWVisualizeWidget(
         subject_item = shNode.CreateSubjectItem(shNode.GetSceneItemID(), subject_name)
 
         # slicer knows how to find the subject hierarchy tree view.
-        widget = slicer.qMRMLSubjectHierarchyTreeView()
+        shTV = slicer.qMRMLSubjectHierarchyTreeView()
         # Tell the subject hierarchy tree view about its enclosing scene.
-        widget.setMRMLScene(slicer.mrmlScene)
+        shTV.setMRMLScene(slicer.mrmlScene)
         # Tell the subject hierarchy tree view that its root item is the subject item.
-        widget.setRootItem(subject_item)
+        shTV.setRootItem(subject_item)
 
         for filename in list_of_files:
             self.addOutputWidget(shNode, subject_item, filename)
 
         # Recursively set visibility and expanded properties of each item
         def recurseVisibility(item, visibility, expanded):
-            print(f"recurseVisibility({item}, {visibility}, {expanded}) called")
             # Useful functions for traversing items
             # shNode.GetSceneItemID()
             # shNode.GetNumberOfItems()
             # shNode.GetNumberOfItemChildren(parentItem)
             # shNode.GetItemByPositionUnderParent(parentItem, childIndex)
             # shNode.SetItemExpanded(shNode.GetSceneItemID(), True)
-            if item == self.show_node_item:
-                # Show this item and any descendants
-                # !!! visibility=True isn't working !!!
-                print(f"{self.show_node_item = }")
-                visibility = True
-                expanded = True
             shNode.SetItemDisplayVisibility(item, visibility)
+            shNode.SetItemExpanded(item, expanded)
             for child_index in range(shNode.GetNumberOfItemChildren(item)):
                 recurseVisibility(
                     shNode.GetItemByPositionUnderParent(item, child_index),
                     visibility,
                     expanded,
                 )
-                shNode.SetItemExpanded(item, expanded)
 
-        recurseVisibility(subject_item, False, False)
+        recurseVisibility(subject_item, True, True)
 
         # Resize columns of the SubjectHierarchyTreeView
-        widget.header().resizeSections(widget.header().ResizeToContents)
+        shTV.header().resizeSections(shTV.header().ResizeToContents)
         # Force re-displaying of the SubjectHierarchyTreeView
         slicer.mrmlScene.StartState(slicer.vtkMRMLScene.ImportState)
         slicer.mrmlScene.EndState(slicer.vtkMRMLScene.ImportState)
+        # Make sure at least one input image (if any) is being viewed
+        if self.show_nodes:
+            slicer.util.setSliceViewerLayers(foreground=self.show_nodes[0], fit=True)
+        self.show_nodes = list()
 
 
 #
