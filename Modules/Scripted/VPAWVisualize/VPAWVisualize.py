@@ -1,9 +1,40 @@
 import logging
+import numpy as np
 import os
+import pickle as pk
 import slicer
 import slicer.ScriptedLoadableModule
 import slicer.util
 import vtk
+
+
+def summary_repr(contents):
+    if isinstance(contents, list):
+        return "[" + ", ".join([summary_repr(elem) for elem in contents]) + "]"
+    elif isinstance(contents, tuple):
+        if len(contents) == 1:
+            return "(" + summary_repr(contents[0]) + ",)"
+        else:
+            return "(" + ", ".join([summary_repr(elem) for elem in contents]) + ")"
+    elif isinstance(contents, dict):
+        return (
+            "{"
+            + ", ".join(
+                [
+                    summary_repr(key) + ": " + summary_repr(value)
+                    for (key, value) in contents.items()
+                ]
+            )
+            + "}"
+        )
+    elif isinstance(contents, set):
+        return "{" + ", ".join([summary_repr(elem) for elem in contents]) + "}"
+    elif isinstance(contents, np.ndarray):
+        return repr(type(contents)) + ".shape=" + summary_repr(contents.shape)
+    elif isinstance(contents, (int, float, np.float32, np.float64, bool, str)):
+        return repr(contents)
+    else:
+        return repr(type(contents))
 
 
 #
@@ -316,25 +347,17 @@ class VPAWVisualizeWidget(
         slicer.mrmlScene.GetSubjectHierarchyNode().RemoveAllItems(True)
         self.show_nodes = list()
 
-    def addOutputWidget(self, shNode, subject_item, filename):
-        # The node types supported by 3D Slicer generally can be found with fgrep
-        # 'loadNodeFromFile(filename' from
-        # https://github.com/Slicer/Slicer/blob/main/Base/Python/slicer/util.py.
-        # Currently they are AnnotationFile, ColorTableFile, FiberBundleFile,
-        # MarkupsFile, ModelFile, ScalarOverlayFile, SegmentationFile,
-        # ShaderPropertyFile, TableFile, TextFile, TransformFile, and VolumeFile.
+    def processP3(self, filename, properties):
+        with open(filename, "rb") as f:
+            contents = pk.load(f)
 
-        # Determine the node type from the filename extension, using its
-        # immediate-ancestor directory's name if necessary.  Note: check for
-        # ".seg.nrrd" before checking for ".nrrd".
-        basename = os.path.basename(filename)
-        basename_repr = repr(basename)
-        if filename.endswith(".p3") or filename.endswith(".xls"):
-            print(f"File type for {basename_repr} is not currently supported")
-            return
+        print(f"File type for {filename} is not currently supported")  # !!!
+        print(f"{filename} contains {summary_repr(contents)}")
+        # !!! Create node from contents
 
-        props = {"name": basename, "singleFile": True, "show": False}
+        return None
 
+    def createNode(self, filename, basename_repr, props):
         if filename.endswith(".seg.nrrd"):
             node = slicer.util.loadSegmentation(filename, properties=props)
         elif filename.endswith(".nrrd"):
@@ -353,10 +376,34 @@ class VPAWVisualizeWidget(
             node = slicer.util.loadVolume(filename, properties=props)
         elif filename.endswith(".png"):
             node = slicer.util.loadVolume(filename, properties=props)
+        elif filename.endswith(".p3"):
+            node = self.processP3(filename, properties=props)
+        elif filename.endswith(".xls"):
+            print(f"File type for {basename_repr} is not currently supported")
+            node = None
         else:
             print(f"File type for {basename_repr} is not recognized")
-            return
+            node = None
+        return node
 
+    def addOutputWidget(self, shNode, subject_item, filename):
+        # The node types supported by 3D Slicer generally can be found with fgrep
+        # 'loadNodeFromFile(filename' from
+        # https://github.com/Slicer/Slicer/blob/main/Base/Python/slicer/util.py.
+        # Currently they are AnnotationFile, ColorTableFile, FiberBundleFile,
+        # MarkupsFile, ModelFile, ScalarOverlayFile, SegmentationFile,
+        # ShaderPropertyFile, TableFile, TextFile, TransformFile, and VolumeFile.
+
+        # Determine the node type from the filename extension, using its
+        # immediate-ancestor directory's name if necessary.  Note: check for
+        # ".seg.nrrd" before checking for ".nrrd".
+        basename = os.path.basename(filename)
+        basename_repr = repr(basename)
+        props = {"name": basename, "singleFile": True, "show": False}
+
+        node = self.createNode(filename, basename_repr, props)
+        if node is None:
+            return
         node_item = shNode.GetItemByDataNode(node)
         # The node item is assigned the subject item as its parent.
         shNode.SetItemParent(node_item, subject_item)
