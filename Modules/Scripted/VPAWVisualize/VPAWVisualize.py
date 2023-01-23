@@ -351,15 +351,19 @@ class VPAWVisualizeWidget(
         with open(filename, "rb") as f:
             contents = pk.load(f)
 
-        print(f"File type for {filename} is not currently supported")  # !!!
-        print(f"{filename} contains {summary_repr(contents)}")
+        print(f"File type for {filename} is not currently supported")
+        print(f"{filename} contains {summary_repr(contents)}") # !!!
         # !!! Create node from contents
 
         return None
 
     def createNode(self, filename, basename_repr, props):
+        # Determine the node type from the filename extension, using its
+        # immediate-ancestor directory's name if necessary.  Note: check for
+        # ".seg.nrrd" before checking for ".nrrd".
         if filename.endswith(".seg.nrrd"):
             node = slicer.util.loadSegmentation(filename, properties=props)
+            node.CreateClosedSurfaceRepresentation()
         elif filename.endswith(".nrrd"):
             directory = os.path.basename(os.path.dirname(filename))
             if directory == "images":
@@ -367,6 +371,7 @@ class VPAWVisualizeWidget(
                 self.show_nodes.append(node)
             elif directory == "segmentations_computed":
                 node = slicer.util.loadSegmentation(filename, properties=props)
+                node.CreateClosedSurfaceRepresentation()
             else:
                 # Guess
                 node = slicer.util.loadVolume(filename, properties=props)
@@ -394,9 +399,6 @@ class VPAWVisualizeWidget(
         # MarkupsFile, ModelFile, ScalarOverlayFile, SegmentationFile,
         # ShaderPropertyFile, TableFile, TextFile, TransformFile, and VolumeFile.
 
-        # Determine the node type from the filename extension, using its
-        # immediate-ancestor directory's name if necessary.  Note: check for
-        # ".seg.nrrd" before checking for ".nrrd".
         basename = os.path.basename(filename)
         basename_repr = repr(basename)
         props = {"name": basename, "singleFile": True, "show": False}
@@ -458,7 +460,11 @@ class VPAWVisualizeWidget(
         if self.show_nodes:
             slicer.util.setSliceViewerLayers(foreground=self.show_nodes[0], fit=True)
         self.show_nodes = list()
-
+        # Center the 3D view
+        layoutManager = slicer.app.layoutManager()
+        threeDWidget = layoutManager.threeDWidget(0)
+        threeDView = threeDWidget.threeDView()
+        threeDView.resetFocalPoint()
 
 #
 # VPAWVisualizeLogic
