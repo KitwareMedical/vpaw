@@ -17,10 +17,10 @@
       <bool>true</bool>
      </property>
      <property name="toolTip">
-      <string>Home</string>
+      <string>Go to Home module</string>
      </property>
      <property name="text">
-      <string>Home</string>
+      <string>Go to Home module</string>
      </property>
     </widget>
    </item>
@@ -30,17 +30,17 @@
       <bool>true</bool>
      </property>
      <property name="toolTip">
-      <string>VPAW Model</string>
+      <string>Go to VPAW Model module</string>
      </property>
      <property name="text">
-      <string>VPAW Model</string>
+      <string>Go to VPAW Model module</string>
      </property>
     </widget>
    </item>
    <item>
     <widget class="ctkCollapsibleButton" name="inputsCollapsibleButton">
      <property name="text">
-      <string>Patient Browser</string>
+      <string>VPAW Visualize: Inputs</string>
      </property>
      <property name="collapsed">
       <bool>false</bool>
@@ -74,7 +74,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QPushButton" name="applyButton">
+    <widget class="QPushButton" name="showButton">
      <property name="enabled">
       <bool>false</bool>
      </property>

@@ -316,21 +316,15 @@ class VPAWModelWidget(
 
     def onHomeButton(self):
         """
-        Run processing when user clicks "Home" button.
+        Switch to the "Home" module when the user clicks the button.
         """
-        with slicer.util.tryWithErrorDisplay(
-            "Failed to compute results.", waitCursor=True
-        ):
-            slicer.util.selectModule("Home")
+        slicer.util.selectModule("Home")
 
     def onVPAWVisualizeButton(self):
         """
-        Run processing when user clicks "VPAW Visualize" button.
+        Switch to the "VPAW Visualize" module when the user clicks the button.
         """
-        with slicer.util.tryWithErrorDisplay(
-            "Failed to compute results.", waitCursor=True
-        ):
-            slicer.util.selectModule("VPAWVisualize")
+        slicer.util.selectModule("VPAWVisualize")
 
     def onApplyButton(self):
         """
