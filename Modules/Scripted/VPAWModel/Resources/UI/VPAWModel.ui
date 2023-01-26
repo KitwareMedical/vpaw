@@ -12,35 +12,35 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QPushButton" name="HomeButton">
-     <property name="enabled">
-      <bool>true</bool>
-     </property>
-     <property name="toolTip">
-      <string>Home</string>
-     </property>
-     <property name="text">
-      <string>Home</string>
-     </property>
-    </widget>
-   </item>
-   <item>
     <widget class="QPushButton" name="VPAWVisualizeButton">
      <property name="enabled">
       <bool>true</bool>
      </property>
      <property name="toolTip">
-      <string>VPAW Visualize</string>
+      <string>Go to VPAW Visualize module</string>
      </property>
      <property name="text">
-      <string>VPAW Visualize</string>
+      <string>Go to VPAW Visualize module</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="HomeButton">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
+     <property name="toolTip">
+      <string>Go to Home module</string>
+     </property>
+     <property name="text">
+      <string>Go to Home module</string>
      </property>
     </widget>
    </item>
    <item>
     <widget class="ctkCollapsibleButton" name="inputsCollapsibleButton">
      <property name="text">
-      <string>Inputs</string>
+      <string>VPAW Model: Inputs</string>
      </property>
      <layout class="QFormLayout" name="formLayout_2">
       <item row="0" column="0">

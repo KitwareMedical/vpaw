@@ -9,6 +9,19 @@ import vtk
 
 
 def summary_repr(contents):
+    """
+    Like Python `repr`, returns a string representing the contents.  However, numpy
+    arrays are summarized as their shape and unknown types are summarized by their type.
+
+    Parameters
+    ----------
+    contents : Python object
+
+    Returns
+    -------
+    A string representation of a summary of the object
+    """
+
     if isinstance(contents, list):
         return "[" + ", ".join([summary_repr(elem) for elem in contents]) + "]"
     elif isinstance(contents, tuple):
@@ -29,10 +42,10 @@ def summary_repr(contents):
         )
     elif isinstance(contents, set):
         return "{" + ", ".join([summary_repr(elem) for elem in contents]) + "}"
-    elif isinstance(contents, np.ndarray):
-        return repr(type(contents)) + ".shape=" + summary_repr(contents.shape)
     elif isinstance(contents, (int, float, np.float32, np.float64, bool, str)):
         return repr(contents)
+    elif isinstance(contents, np.ndarray):
+        return repr(type(contents)) + ".shape=" + summary_repr(contents.shape)
     else:
         return repr(type(contents))
 
@@ -43,7 +56,8 @@ def summary_repr(contents):
 
 
 class VPAWVisualize(slicer.ScriptedLoadableModule.ScriptedLoadableModule):
-    """Uses ScriptedLoadableModule base class, available at:
+    """
+    Uses ScriptedLoadableModule base class, available at:
     https://github.com/Slicer/Slicer/blob/main/Base/Python/slicer/ScriptedLoadableModule.py
     """
 
@@ -87,6 +101,7 @@ def registerSampleData():
     """
     Add data sets to Sample Data module.
     """
+
     # It is always recommended to provide sample data for users to make it easy to try
     # the module, but if no sample data is available then this method (and associated
     # startupCompeted signal connection) can be removed.
@@ -103,7 +118,8 @@ class VPAWVisualizeWidget(
     slicer.ScriptedLoadableModule.ScriptedLoadableModuleWidget,
     slicer.util.VTKObservationMixin,
 ):
-    """Uses ScriptedLoadableModuleWidget base class, available at:
+    """
+    Uses ScriptedLoadableModuleWidget base class, available at:
     https://github.com/Slicer/Slicer/blob/main/Base/Python/slicer/ScriptedLoadableModule.py
     """
 
@@ -112,6 +128,7 @@ class VPAWVisualizeWidget(
         Called when the user opens the module the first time and the widget is
         initialized.
         """
+
         slicer.ScriptedLoadableModule.ScriptedLoadableModuleWidget.__init__(
             self, parent
         )
@@ -120,13 +137,13 @@ class VPAWVisualizeWidget(
         self.logic = None
         self._parameterNode = None
         self._updatingGUIFromParameterNode = False
-        self.clearOutputWidgets()
 
     def setup(self):
         """
         Called when the user opens the module the first time and the widget is
         initialized.
         """
+
         slicer.ScriptedLoadableModule.ScriptedLoadableModuleWidget.setup(self)
 
         # Load widget from .ui file (created by Qt Designer).
@@ -166,7 +183,7 @@ class VPAWVisualizeWidget(
         # Buttons
         self.ui.HomeButton.connect("clicked(bool)", self.onHomeButton)
         self.ui.VPAWModelButton.connect("clicked(bool)", self.onVPAWModelButton)
-        self.ui.applyButton.connect("clicked(bool)", self.onApplyButton)
+        self.ui.showButton.connect("clicked(bool)", self.onShowButton)
 
         # Make sure parameter node is initialized (needed for module reload)
         self.initializeParameterNode()
@@ -177,12 +194,14 @@ class VPAWVisualizeWidget(
         """
         Called when the application closes and the module widget is destroyed.
         """
+
         self.removeObservers()
 
     def enter(self):
         """
         Called each time the user opens this module.
         """
+
         # Make sure parameter node exists and observed
         self.initializeParameterNode()
 
@@ -190,6 +209,7 @@ class VPAWVisualizeWidget(
         """
         Called each time the user opens a different module.
         """
+
         # Do not react to parameter node changes (GUI wlil be updated when the user
         # enters into the module)
         self.removeObserver(
@@ -202,6 +222,7 @@ class VPAWVisualizeWidget(
         """
         Called just before the scene is closed.
         """
+
         # Parameter node will be reset, do not use it anymore
         self.setParameterNode(None)
 
@@ -209,6 +230,7 @@ class VPAWVisualizeWidget(
         """
         Called just after the scene is closed.
         """
+
         # If this module is shown while the scene is closed then recreate a new
         # parameter node immediately
         if self.parent.isEntered:
@@ -218,6 +240,7 @@ class VPAWVisualizeWidget(
         """
         Ensure parameter node exists and observed.
         """
+
         # Parameter node stores all user choices in parameter values, node selections,
         # etc.  so that when the scene is saved and reloaded, these settings are
         # restored.
@@ -275,15 +298,22 @@ class VPAWVisualizeWidget(
 
         # Update buttons states and tooltips
         if os.path.isdir(self.ui.DataDirectory.currentPath):
-            # Enable apply button
-            self.ui.applyButton.toolTip = (
-                "Show files from {self.ui.DataDirectory.currentPath}"
+            # Enable show button
+            self.ui.showButton.toolTip = (
+                f"Show files from {repr(self.ui.DataDirectory.currentPath)}"
+                + (
+                    f" with prefix {repr(self.ui.PatientPrefix.text)}"
+                    if self.ui.PatientPrefix.text != ""
+                    else ""
+                )
             )
-            self.ui.applyButton.enabled = True
+            self.ui.showButton.enabled = True
         else:
-            # Disable apply button
-            self.ui.applyButton.toolTip = "First, select valid data directory"
-            self.ui.applyButton.enabled = False
+            # Disable show button
+            self.ui.showButton.toolTip = (
+                "Show is disabled; first select a valid data directory"
+            )
+            self.ui.showButton.enabled = False
 
         # All the GUI updates are done
         self._updatingGUIFromParameterNode = False
@@ -311,56 +341,228 @@ class VPAWVisualizeWidget(
 
     def onHomeButton(self):
         """
-        Run processing when user clicks "Home" button.
+        Switch to the "Home" module when the user clicks the button.
         """
-        with slicer.util.tryWithErrorDisplay(
-            "Failed to compute results.", waitCursor=True
-        ):
-            slicer.util.selectModule("Home")
+
+        slicer.util.selectModule("Home")
 
     def onVPAWModelButton(self):
         """
-        Run processing when user clicks "VPAW Model" button.
+        Switch to the "VPAW Model" module when the user clicks the button.
         """
-        with slicer.util.tryWithErrorDisplay(
-            "Failed to compute results.", waitCursor=True
-        ):
-            slicer.util.selectModule("VPAWModel")
 
-    def onApplyButton(self):
+        slicer.util.selectModule("VPAWModel")
+
+    def onShowButton(self):
         """
-        Run processing when user clicks "Apply" button.
+        When the user clicks the Show button, find the requested files and load them in
+        to 3D Slicer's subject hierarchy.
         """
+
         with slicer.util.tryWithErrorDisplay(
-            "Failed to compute results.", waitCursor=True
+            "Failed to show patient data.", waitCursor=True
         ):
 
             # Compute output
-            list_of_files = self.logic.process(
+            list_of_files = self.logic.find_and_sort_files_with_prefix(
                 self.ui.DataDirectory.currentPath, self.ui.PatientPrefix.text
             )
             # Display output
-            self.clearOutputWidgets()
-            self.addOutputWidgets(list_of_files)
+            subject_name = (
+                self.ui.PatientPrefix.text
+                if self.ui.PatientPrefix.text != ""
+                else "All"
+            )
+            self.logic.clearSubjectHierarchy()
+            self.logic.loadNodesToSubjectHierarchy(list_of_files, subject_name)
+            self.logic.arrangeView()
 
-    def clearOutputWidgets(self):
-        slicer.mrmlScene.GetSubjectHierarchyNode().RemoveAllItems(True)
-        self.show_nodes = list()
 
-    def processP3(self, filename, properties):
+#
+# VPAWVisualizeLogic
+#
+
+
+class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
+    """This class should implement all the actual computation done by your module.  The
+    interface should be such that other python code can import this class and make use
+    of the functionality without requiring an instance of the Widget.
+    Uses ScriptedLoadableModuleLogic base class, available at:
+    https://github.com/Slicer/Slicer/blob/main/Base/Python/slicer/ScriptedLoadableModule.py
+    """
+
+    def __init__(self):
+        """
+        Called when the logic class is instantiated. Can be used for initializing member
+        variables.
+        """
+
+        slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic.__init__(self)
+        self.clearSubjectHierarchy()
+
+    def setDefaultParameters(self, parameterNode):
+        """
+        Initialize parameter node with default settings.
+        """
+
+        if not parameterNode.GetParameter("Threshold"):
+            parameterNode.SetParameter("Threshold", "100.0")
+        if not parameterNode.GetParameter("Invert"):
+            parameterNode.SetParameter("Invert", "false")
+
+    def find_files_with_prefix(self, path, prefix, include_subjectless=False):
+        """
+        Find all file names within `path` recursively that start with `prefix`
+
+        Parameters
+        ----------
+        path : str
+            Initially, the top-level directory to be scanned for files.  For recursive
+            calls, it will be a directory or file within the top-level directory's
+            hierarchy.
+        prefix: str
+            A value such as "1000_" will find all proper files that have basenames that
+            start with that string.  If prefix=="" then all files regardless of name
+            will be reported.
+        include_subjectless: bool
+            If set to True then files not associated with any patient will also be
+            included.
+
+        Returns
+        -------
+        When `path` is a file, returns the one-tuple list `[(path, mtime)]` if the
+            `path` basename begins with `prefix`; otherwise returns an empty list.
+            "mtime" is the modification time returned by os.path.getmtime(path).
+        When `path` is a directory, returns the concatenation of the lists generated by
+            a recursive call to find_files_with_prefix for each entry in the directory.
+        """
+
+        if os.path.isdir(path):
+            # This `path` is a directory.  Recurse to all files and directories within
+            # `path` and flatten the responses into a single list.
+            response = [
+                record
+                for sub in os.listdir(path)
+                for record in self.find_files_with_prefix(
+                    os.path.join(path, sub), prefix, include_subjectless
+                )
+            ]
+        else:
+            # This path is not a directory.  Return a list containting the path if the
+            # path basename begins with `prefix`, otherwise return an empty list.
+            response = [
+                (p, os.path.getmtime(p))
+                for p in (path,)
+                if os.path.basename(p).startswith(prefix)
+                or (
+                    include_subjectless
+                    and (
+                        "mean_landmarks" in p
+                        or "FilteredControlBlindingLogUniqueScanFiltered" in p
+                        or "weighted_perc" in p
+                    )
+                )
+            ]
+        return response
+
+    def find_and_sort_files_with_prefix(self, dataDirectory, patientPrefix):
+        """
+        Find all file names within `path` recursively that start with `prefix`, and sort
+        them by their modification times
+
+        Parameters
+        ----------
+        path : str
+            The top-level directory to be scanned for files.
+        prefix: str
+            A value such as "1000_" will find all proper files that have basenames that
+            start with that string.  If prefix=="" then all files regardless of name
+            will be reported.
+
+        Returns
+        -------
+        When `path` is a directory, returns a list of the requested files, sorted
+        chronologically by their modification times in
+        """
+
+        if not (isinstance(dataDirectory, str) and os.path.isdir(dataDirectory)):
+            raise ValueError(
+                f"Data directory (value={repr(dataDirectory)}) is not valid"
+            )
+        if not (patientPrefix is None or isinstance(patientPrefix, str)):
+            raise ValueError(
+                f"Patient prefix (value={repr(patientPrefix)}) is not valid"
+            )
+        if patientPrefix is None:
+            patientPrefix = ""
+
+        import time
+
+        startTime = time.time()
+        logging.info("Processing started")
+
+        list_of_records = self.find_files_with_prefix(
+            dataDirectory, patientPrefix, include_subjectless=True
+        )
+        # Sort by modification time
+        list_of_records.sort(key=lambda record: record[1])
+        # Remove modification times
+        list_of_files = [record[0] for record in list_of_records]
+
+        stopTime = time.time()
+        logging.info(f"Processing completed in {stopTime-startTime:.2f} seconds")
+
+        return list_of_files
+
+    def loadFromP3File(self, filename, properties):
+        """
+        Load a node based upon a P3 file, in lieu of a 3D Slicer "slicer.util.load*"
+        function.
+
+        Parameters
+        ----------
+        filename : str
+            The file from which to read the data that will define the created node
+        properties : dict
+            A dictionary of properties that otherwise would be passed to most
+            slicer.util.load* functions, but in this case is parsed for anything useful
+
+        Returns
+        -------
+        A 3D Slicer node object representing the data
+        """
+
         with open(filename, "rb") as f:
             contents = pk.load(f)
 
         print(f"File type for {filename} is not currently supported")
-        print(f"{filename} contains {summary_repr(contents)}") # !!!
+        print(f"{filename} contains {summary_repr(contents)}")  # !!!
         # !!! Create node from contents
 
         return None
 
-    def createNode(self, filename, basename_repr, props):
+    def loadOneNode(self, filename, basename_repr, props):
+        """
+        Create a 3D Slicer node object for the data in a file
+
+        Parameters
+        ----------
+        filename : str
+            The file from which to read the data that will define the created node
+        basename_repr: str
+            A string representing the file, which is used for warning/error output
+        props : dict
+            A dictionary of properties that is passed to most slicer.util.load*
+            functions
+
+        Returns
+        -------
+        A 3D Slicer node object representing the data
+        """
+
         # Determine the node type from the filename extension, using its
-        # immediate-ancestor directory's name if necessary.  Note: check for
-        # ".seg.nrrd" before checking for ".nrrd".
+        # immediate-ancestor directory's name if necessary.  Note: check for ".seg.nrrd"
+        # before checking for ".nrrd".
         if filename.endswith(".seg.nrrd"):
             node = slicer.util.loadSegmentation(filename, properties=props)
             node.CreateClosedSurfaceRepresentation()
@@ -382,7 +584,7 @@ class VPAWVisualizeWidget(
         elif filename.endswith(".png"):
             node = slicer.util.loadVolume(filename, properties=props)
         elif filename.endswith(".p3"):
-            node = self.processP3(filename, properties=props)
+            node = self.loadFromP3File(filename, properties=props)
         elif filename.endswith(".xls"):
             print(f"File type for {basename_repr} is not currently supported")
             node = None
@@ -391,7 +593,29 @@ class VPAWVisualizeWidget(
             node = None
         return node
 
-    def addOutputWidget(self, shNode, subject_item, filename):
+    def clearSubjectHierarchy(self):
+        """
+        Remove all nodes from the 3D Slicer subject hierarchy
+        """
+
+        slicer.mrmlScene.GetSubjectHierarchyNode().RemoveAllItems(True)
+        self.show_nodes = list()
+
+    def loadOneNodeToSubjectHierarchy(self, shNode, subject_item, filename):
+        """
+        Load data from a single file into a node and put the node in the 3D Slicer
+        subject hierarchy
+
+        Parameters
+        ----------
+        shNode: subject hierarchy node
+            The 3D subject hierarchy node
+        subject_item: int
+            Parent for the node we are creating
+        filename: str
+            The data source for the file
+        """
+
         # The node types supported by 3D Slicer generally can be found with fgrep
         # 'loadNodeFromFile(filename' from
         # https://github.com/Slicer/Slicer/blob/main/Base/Python/slicer/util.py.
@@ -403,23 +627,31 @@ class VPAWVisualizeWidget(
         basename_repr = repr(basename)
         props = {"name": basename, "singleFile": True, "show": False}
 
-        node = self.createNode(filename, basename_repr, props)
+        node = self.loadOneNode(filename, basename_repr, props)
         if node is None:
             return
         node_item = shNode.GetItemByDataNode(node)
         # The node item is assigned the subject item as its parent.
         shNode.SetItemParent(node_item, subject_item)
-        return
 
-    def addOutputWidgets(self, list_of_files):
+    def loadNodesToSubjectHierarchy(self, list_of_files, subject_name):
+        """
+        Load data from files into nodes and put the nodes in the 3D Slicer subject
+        hierarchy
+
+        Parameters
+        ----------
+        list_of_files : List[str]
+            Files to be loaded
+        subject_name : str
+            Name for folder in subject hierarchy to contain the nodes
+        """
+
         # The subject hierarchy node can contain subject (patient), study (optionally),
         # and node items.  slicer.mrmlScene knows how to find the subject hierarchy
         # node.
         shNode = slicer.mrmlScene.GetSubjectHierarchyNode()
         # A subject item is created with the subject hierarchy node as its parent.
-        subject_name = (
-            self.ui.PatientPrefix.text if self.ui.PatientPrefix.text != "" else "All"
-        )
         subject_item = shNode.CreateSubjectItem(shNode.GetSceneItemID(), subject_name)
 
         # slicer knows how to find the subject hierarchy tree view.
@@ -430,7 +662,7 @@ class VPAWVisualizeWidget(
         shTV.setRootItem(subject_item)
 
         for filename in list_of_files:
-            self.addOutputWidget(shNode, subject_item, filename)
+            self.loadOneNodeToSubjectHierarchy(shNode, subject_item, filename)
 
         # Recursively set visibility and expanded properties of each item
         def recurseVisibility(item, visibility, expanded):
@@ -456,135 +688,22 @@ class VPAWVisualizeWidget(
         # Force re-displaying of the SubjectHierarchyTreeView
         slicer.mrmlScene.StartState(slicer.vtkMRMLScene.ImportState)
         slicer.mrmlScene.EndState(slicer.vtkMRMLScene.ImportState)
+
+    def arrangeView(self):
+        """
+        Make the 3D Slicer viewing panels default to something reasonable
+        """
+
         # Make sure at least one input image (if any) is being viewed
         if self.show_nodes:
             slicer.util.setSliceViewerLayers(foreground=self.show_nodes[0], fit=True)
         self.show_nodes = list()
+
         # Center the 3D view
         layoutManager = slicer.app.layoutManager()
         threeDWidget = layoutManager.threeDWidget(0)
         threeDView = threeDWidget.threeDView()
         threeDView.resetFocalPoint()
-
-#
-# VPAWVisualizeLogic
-#
-
-
-class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
-    """This class should implement all the actual computation done by your module.  The
-    interface should be such that other python code can import this class and make use
-    of the functionality without requiring an instance of the Widget.
-    Uses ScriptedLoadableModuleLogic base class, available at:
-    https://github.com/Slicer/Slicer/blob/main/Base/Python/slicer/ScriptedLoadableModule.py
-    """
-
-    def __init__(self):
-        """
-        Called when the logic class is instantiated. Can be used for initializing member
-        variables.
-        """
-        slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic.__init__(self)
-
-    def setDefaultParameters(self, parameterNode):
-        """
-        Initialize parameter node with default settings.
-        """
-        if not parameterNode.GetParameter("Threshold"):
-            parameterNode.SetParameter("Threshold", "100.0")
-        if not parameterNode.GetParameter("Invert"):
-            parameterNode.SetParameter("Invert", "false")
-
-    def process(self, dataDirectory, patientPrefix):
-        """
-        Run the processing algorithm.
-        Can be used without GUI widget.
-        :param dataDirectory: root directory containing data
-        :param patientPrefix: prefix string for selecting which files are relevant
-        """
-
-        if not (isinstance(dataDirectory, str) and os.path.isdir(dataDirectory)):
-            raise ValueError(
-                f"Data directory (value={repr(dataDirectory)}) is not valid"
-            )
-        if not (patientPrefix is None or isinstance(patientPrefix, str)):
-            raise ValueError(
-                f"Patient prefix (value={repr(patientPrefix)}) is not valid"
-            )
-        if patientPrefix is None:
-            patientPrefix = ""
-
-        import time
-
-        startTime = time.time()
-        logging.info("Processing started")
-
-        list_of_records = self.find_files_with_prefix(
-            dataDirectory, patientPrefix, subjectless_too=True
-        )
-        # Sort by modification time
-        list_of_records.sort(key=lambda record: record[1])
-        # Remove modification times
-        list_of_files = [record[0] for record in list_of_records]
-
-        stopTime = time.time()
-        logging.info(f"Processing completed in {stopTime-startTime:.2f} seconds")
-
-        return list_of_files
-
-    def find_files_with_prefix(self, path, prefix, subjectless_too=False):
-        """Find all file names within `path` recursively that start with `prefix`
-
-        Parameters
-        ----------
-        path : str
-            Initially, the top-level directory to be scanned for files.  For recursive
-            calls, it will be a directory or file within the top-level directory's
-            hierarchy.
-        prefix: str
-            A value such as "1000_" will find all proper files that have basenames that
-            start with that string.  If prefix=="" then all files regardless of name
-            will be reported.
-        subjectless_too: bool
-            If set to True then files not associated with any patient will also be
-            included.
-
-        Returns
-        -------
-        When `path` is a file, returns the one-tuple list `[(path, mtime)]` if the
-            `path` basename begins with `prefix`; otherwise returns an empty list.
-            "mtime" is the modification time returned by os.path.getmtime(path).
-        When `path` is a directory, returns the concatenation of the lists generated by
-            a recursive call to find_files_with_prefix for each entry in the directory.
-
-        """
-        if os.path.isdir(path):
-            # This `path` is a directory.  Recurse to all files and directories within
-            # `path` and flatten the responses into a single list.
-            response = [
-                record
-                for sub in os.listdir(path)
-                for record in self.find_files_with_prefix(
-                    os.path.join(path, sub), prefix, subjectless_too
-                )
-            ]
-        else:
-            # This path is not a directory.  Return a list containting the path if the
-            # path basename begins with `prefix`, otherwise return an empty list.
-            response = [
-                (p, os.path.getmtime(p))
-                for p in (path,)
-                if os.path.basename(p).startswith(prefix)
-                or (
-                    subjectless_too
-                    and (
-                        "mean_landmarks" in p
-                        or "FilteredControlBlindingLogUniqueScanFiltered" in p
-                        or "weighted_perc" in p
-                    )
-                )
-            ]
-        return response
 
 
 #
@@ -600,8 +719,11 @@ class VPAWVisualizeTest(slicer.ScriptedLoadableModule.ScriptedLoadableModuleTest
     """
 
     def setUp(self):
-        """Do whatever is needed to reset the state - typically a scene clear will be
-        enough."""
+        """
+        Do whatever is needed to reset the state - typically a scene clear will be
+        enough.
+        """
+
         slicer.mrmlScene.Clear()
 
     def runTest(self):
@@ -610,15 +732,16 @@ class VPAWVisualizeTest(slicer.ScriptedLoadableModule.ScriptedLoadableModuleTest
         self.test_VPAWVisualize1()
 
     def test_VPAWVisualize1(self):
-        """Ideally you should have several levels of tests.  At the lowest level
-        tests should exercise the functionality of the logic with different inputs
-        (both valid and invalid).  At higher levels your tests should emulate the
-        way the user would interact with your code and confirm that it still works
-        the way you intended.
+        """
+        Ideally you should have several levels of tests.  At the lowest level tests
+        should exercise the functionality of the logic with different inputs (both valid
+        and invalid).  At higher levels your tests should emulate the way the user would
+        interact with your code and confirm that it still works the way you intended.
+
         One of the most important features of the tests is that it should alert other
         developers when their changes will have an impact on the behavior of your
-        module.  For example, if a developer removes a feature that you depend on,
-        your test should break so they know that the feature is needed.
+        module.  For example, if a developer removes a feature that you depend on, your
+        test should break so they know that the feature is needed.
         """
 
         self.delayDisplay("Starting the test")
