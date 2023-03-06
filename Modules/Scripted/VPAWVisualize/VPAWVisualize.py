@@ -472,9 +472,9 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
 
         Parameters
         ----------
-        path : str
+        dataDirectory : str
             The top-level directory to be scanned for files.
-        prefix: str
+        patientPrefix: str
             A value such as "1000_" will find all proper files that have basenames that
             start with that string.  If prefix=="" then all files regardless of name
             will be reported.
@@ -502,7 +502,7 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         logging.info("Processing started")
 
         list_of_records = self.find_files_with_prefix(
-            dataDirectory, patientPrefix, include_subjectless=True
+            dataDirectory, patientPrefix, include_subjectless=False
         )
         # Sort by modification time
         list_of_records.sort(key=lambda record: record[1])
