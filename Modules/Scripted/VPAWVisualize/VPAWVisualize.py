@@ -185,6 +185,7 @@ class VPAWVisualizeWidget(
         self.ui.HomeButton.connect("clicked(bool)", self.onHomeButton)
         self.ui.VPAWModelButton.connect("clicked(bool)", self.onVPAWModelButton)
         self.ui.showButton.connect("clicked(bool)", self.onShowButton)
+        self.ui.computeIsosurfacesButton.connect("clicked(bool)", self.onComputeIsosurfacesButton)
 
         # Make sure parameter node is initialized (needed for module reload)
         self.initializeParameterNode()
@@ -374,9 +375,22 @@ class VPAWVisualizeWidget(
                 if self.ui.PatientPrefix.text != ""
                 else "All"
             )
-            self.logic.clearSubjectHierarchy()
+            self.logic.clearSubject()
             self.logic.loadNodesToSubjectHierarchy(list_of_files, subject_name)
             self.logic.arrangeView()
+
+
+    def onComputeIsosurfacesButton(self):
+        """
+        Compute isosurfaces of the laplace sol'n image
+        """
+
+        with slicer.util.tryWithErrorDisplay(
+            "Unable to compute isosurfaces; see exception message below.", waitCursor=True
+        ):
+            self.logic.compute_isosurfaces()
+
+
 
 
 #
@@ -399,7 +413,7 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         """
 
         slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic.__init__(self)
-        self.clearSubjectHierarchy()
+        self.clearSubject()
 
     def setDefaultParameters(self, parameterNode):
         """
@@ -621,6 +635,13 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
             node = None
         return node
 
+    def clearSubject(self):
+        """ Set VPAWVisualizeLogic to initial state before any subject was loaded,
+        and clear the subject hierarchy. """
+        self.subject_id = None
+        self.laplace_sol_node = None
+        self.clearSubjectHierarchy()
+
     def clearSubjectHierarchy(self):
         """
         Remove all nodes from the 3D Slicer subject hierarchy
@@ -658,6 +679,8 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         node = self.loadOneNode(filename, basename_repr, props)
         if node is None:
             return
+        if Path(filename).parent.stem == "sols":
+            self.laplace_sol_node = node
         node_item = shNode.GetItemByDataNode(node)
         # The node item is assigned the subject item as its parent.
         shNode.SetItemParent(node_item, subject_item)
@@ -674,6 +697,8 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         subject_name : str
             Name for folder in subject hierarchy to contain the nodes
         """
+
+        self.subject_id = subject_name
 
         # The subject hierarchy node can contain subject (patient), study (optionally),
         # and node items.  slicer.mrmlScene knows how to find the subject hierarchy
@@ -733,6 +758,66 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         threeDView = threeDWidget.threeDView()
         threeDView.resetFocalPoint()
 
+
+    def compute_isosurfaces(self):
+        """ Compute isosurfaces of the laplace solution image, if one exists.
+        Raises exception if none exists. """
+        if self.laplace_sol_node is None:
+            raise Exception("No Laplace solution seems to be loaded.")
+
+        sol_node_name = self.laplace_sol_node.GetName()
+
+        isosurface_values = np.linspace(0,1,11)
+
+        # marching cubes does not work great at actual min or max value
+        # so we leave a bit of room
+        isosurface_values[0] += 0.02
+        isosurface_values[-1] -= 0.02
+
+        output_models = []
+        for value in isosurface_values:
+            output_model_node = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLModelNode")
+            output_models.append(output_model_node)
+            output_model_node.SetName(f"{sol_node_name}_{value:0.2f}")
+            parameters = {
+            'InputVolume' : self.laplace_sol_node,
+            'OutputGeometry' : output_model_node,
+            'Threshold' : value,
+            'Smooth' : 0,
+            'Decimate' : 0.25,
+            'SplitNormals' : True,
+            'PointNormals' : True,
+            }
+            cli_node = slicer.cli.runSync(slicer.modules.grayscalemodelmaker, None, parameters)
+            if cli_node.GetStatus() & cli_node.ErrorsMask:
+                errorText = cli_node.GetErrorText()
+                slicer.mrmlScene.RemoveNode(cli_node)
+                raise ValueError("Grayscale Model Maker execution failed: " + errorText)
+            slicer.mrmlScene.RemoveNode(cli_node)
+
+        # now output_models should be merged
+        merged_model_node = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLModelNode")
+        merged_model_node.SetName(f"{sol_node_name}_isosurfaces")
+
+        def merge_model_nodes(node1, node2, output_node):
+            parameters = {
+                'Model1' : node1,
+                'Model2' : node2,
+                'ModelOutput' : output_node,
+            }
+            cli_node = slicer.cli.runSync(slicer.modules.mergemodels, None, parameters)
+            if cli_node.GetStatus() & cli_node.ErrorsMask:
+                errorText = cli_node.GetErrorText()
+                slicer.mrmlScene.RemoveNode(cli_node)
+                raise ValueError("Merge Models execution failed: " + errorText)
+            slicer.mrmlScene.RemoveNode(cli_node)
+
+        merge_model_nodes(output_models[0], output_models[1], merged_model_node)
+        slicer.mrmlScene.RemoveNode(output_models[0])
+        slicer.mrmlScene.RemoveNode(output_models[1])
+        for model_node in output_models[2:]:
+            merge_model_nodes(merged_model_node, model_node, merged_model_node)
+            slicer.mrmlScene.RemoveNode(model_node)
 
 #
 # VPAWVisualizeTest

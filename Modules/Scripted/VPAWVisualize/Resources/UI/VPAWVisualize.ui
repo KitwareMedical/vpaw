@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>279</width>
-    <height>286</height>
+    <width>426</width>
+    <height>414</height>
    </rect>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
@@ -106,6 +106,13 @@
     </widget>
    </item>
    <item>
+    <widget class="QPushButton" name="computeIsosurfacesButton">
+     <property name="text">
+      <string>compute isosurfaces</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <spacer name="verticalSpacer">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
@@ -122,6 +129,12 @@
  </widget>
  <customwidgets>
   <customwidget>
+   <class>qMRMLWidget</class>
+   <extends>QWidget</extends>
+   <header>qMRMLWidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
    <class>qMRMLSubjectHierarchyTreeView</class>
    <extends>QTreeView</extends>
    <header>qMRMLSubjectHierarchyTreeView.h</header>
@@ -133,71 +146,11 @@
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>ctkSliderWidget</class>
+   <class>ctkPathLineEdit</class>
    <extends>QWidget</extends>
-   <header>ctkSliderWidget.h</header>
-  </customwidget>
-  <customwidget>
-   <class>qMRMLNodeComboBox</class>
-   <extends>QWidget</extends>
-   <header>qMRMLNodeComboBox.h</header>
-  </customwidget>
-  <customwidget>
-   <class>qMRMLWidget</class>
-   <extends>QWidget</extends>
-   <header>qMRMLWidget.h</header>
-   <container>1</container>
+   <header>ctkPathLineEdit.h</header>
   </customwidget>
  </customwidgets>
  <resources/>
- <connections>
-  <connection>
-   <sender>VPAWVisualize</sender>
-   <signal>mrmlSceneChanged(vtkMRMLScene*)</signal>
-   <receiver>inputSelector</receiver>
-   <slot>setMRMLScene(vtkMRMLScene*)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>122</x>
-     <y>132</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>248</x>
-     <y>61</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>VPAWVisualize</sender>
-   <signal>mrmlSceneChanged(vtkMRMLScene*)</signal>
-   <receiver>outputSelector</receiver>
-   <slot>setMRMLScene(vtkMRMLScene*)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>82</x>
-     <y>135</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>220</x>
-     <y>161</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>VPAWVisualize</sender>
-   <signal>mrmlSceneChanged(vtkMRMLScene*)</signal>
-   <receiver>invertedOutputSelector</receiver>
-   <slot>setMRMLScene(vtkMRMLScene*)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>161</x>
-     <y>8</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>173</x>
-     <y>176</y>
-    </hint>
-   </hints>
-  </connection>
- </connections>
+ <connections/>
 </ui>
