@@ -369,6 +369,8 @@ class VPAWVisualizeWidget(
             list_of_files = self.logic.find_and_sort_files_with_prefix(
                 self.ui.DataDirectory.currentPath, self.ui.PatientPrefix.text
             )
+            if len(list_of_files) == 0:
+                raise FileNotFoundError("No patient found with the given prefix.")
             # Display output
             subject_name = (
                 self.ui.PatientPrefix.text
