@@ -1,6 +1,7 @@
 import logging
 import numpy as np
 import os
+from pathlib import Path
 import pickle as pk
 import slicer
 import slicer.ScriptedLoadableModule
@@ -535,11 +536,36 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         with open(filename, "rb") as f:
             contents = pk.load(f)
 
+        if Path(filename).parent.stem == "centerline":
+            return self.loadCenterlineFromP3FileContents(contents)
+
         print(f"File type for {filename} is not currently supported")
         print(f"{filename} contains {summary_repr(contents)}")  # !!!
         # !!! Create node from contents
 
         return None
+
+    def loadCenterlineFromP3FileContents(self, contents):
+        """
+        Load a centerline using the data object written into a P3 file named "####_CENTERLINE.p3"
+
+        Parameters
+        ----------
+        contents : a pair of arrays (centerline_points, centerline_normals). Currently we only use
+            centerline_points, piecing them together into a curve node.
+
+        Returns
+        -------
+        A vtkMRMLMarkupsCurveNode
+        """
+        centerline_points, centerline_normals = contents
+        centerline_node = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLMarkupsCurveNode")
+        centerline_node.SetName("Centerline")
+        slicer.util.updateMarkupsControlPointsFromArray(centerline_node, centerline_points)
+        centerline_node.GetDisplayNode().SetGlyphTypeFromString("Vertex2D")
+        centerline_node.SetCurveTypeToLinear()
+        centerline_node.LockedOn() # don't allow mouse interaction to move control points
+        return centerline_node
 
     def loadOneNode(self, filename, basename_repr, props):
         """
