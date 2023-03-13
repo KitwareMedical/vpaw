@@ -579,6 +579,8 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
                 node = slicer.util.loadVolume(filename, properties=props)
         elif filename.endswith(".fcsv"):
             node = slicer.util.loadMarkups(filename)
+            assert(node.IsTypeOf('vtkMRMLMarkupsNode'))
+            node.LockedOn() # don't allow mouse interaction to move control points
         elif filename.endswith(".mha"):
             node = slicer.util.loadVolume(filename, properties=props)
         elif filename.endswith(".png"):
