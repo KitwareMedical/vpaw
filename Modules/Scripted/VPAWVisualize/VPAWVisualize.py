@@ -364,21 +364,15 @@ class VPAWVisualizeWidget(
         with slicer.util.tryWithErrorDisplay(
             "Failed to show patient data.", waitCursor=True
         ):
-
-            # Compute output
+            if self.ui.PatientPrefix.text == "":
+                raise ValueError("Provide a patient prefix for which to show data.")
             list_of_files = self.logic.find_and_sort_files_with_prefix(
                 self.ui.DataDirectory.currentPath, self.ui.PatientPrefix.text
             )
             if len(list_of_files) == 0:
                 raise FileNotFoundError("No patient found with the given prefix.")
-            # Display output
-            subject_name = (
-                self.ui.PatientPrefix.text
-                if self.ui.PatientPrefix.text != ""
-                else "All"
-            )
             self.logic.clearSubject()
-            self.logic.loadNodesToSubjectHierarchy(list_of_files, subject_name)
+            self.logic.loadNodesToSubjectHierarchy(list_of_files, self.ui.PatientPrefix.text)
             self.logic.arrangeView()
 
 
