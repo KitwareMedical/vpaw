@@ -38,11 +38,11 @@
     </widget>
    </item>
    <item>
-    <widget class="ctkCollapsibleButton" name="inputsCollapsibleButton">
-     <property name="text">
+    <widget class="ctkCollapsibleButton" name="inputsCollapsibleButton" native="true">
+     <property name="text" stdset="0">
       <string>VPAW Visualize: Inputs</string>
      </property>
-     <property name="collapsed">
+     <property name="collapsed" stdset="0">
       <bool>false</bool>
      </property>
      <layout class="QFormLayout" name="inputsFormLayout">
@@ -87,17 +87,17 @@
     </widget>
    </item>
    <item>
-    <widget class="ctkCollapsibleButton" name="outputsCollapsibleButton">
-     <property name="text">
+    <widget class="ctkCollapsibleButton" name="outputsCollapsibleButton" native="true">
+     <property name="text" stdset="0">
       <string>Outputs</string>
      </property>
-     <property name="collapsed">
+     <property name="collapsed" stdset="0">
       <bool>false</bool>
      </property>
      <layout class="QGridLayout" name="outputsGridLayout">
       <item row="0" column="0">
        <widget class="qMRMLSubjectHierarchyTreeView" name="subjectHierarchyTree">
-        <property name="multiSelection">
+        <property name="multiSelection" stdset="0">
          <bool>true</bool>
         </property>
        </widget>
@@ -105,11 +105,36 @@
      </layout>
     </widget>
    </item>
-   <item>
-    <widget class="QPushButton" name="computeIsosurfacesButton">
-     <property name="text">
-      <string>compute isosurfaces</string>
+   <item alignment="Qt::AlignTop">
+    <widget class="QStackedWidget" name="computeIsosurfacesStackedWidget">
+     <property name="currentIndex">
+      <number>0</number>
      </property>
+     <widget class="QWidget" name="page">
+      <layout class="QVBoxLayout" name="verticalLayout_2">
+       <item>
+        <widget class="QPushButton" name="computeIsosurfacesButton">
+         <property name="text">
+          <string>compute isosurfaces</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="page_2">
+      <layout class="QVBoxLayout" name="verticalLayout_3">
+       <item>
+        <widget class="QProgressBar" name="computeIsosurfacesProgressBar">
+         <property name="cursor">
+          <cursorShape>WaitCursor</cursorShape>
+         </property>
+         <property name="value">
+          <number>24</number>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
     </widget>
    </item>
    <item>

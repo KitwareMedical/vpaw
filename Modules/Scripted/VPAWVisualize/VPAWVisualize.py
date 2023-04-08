@@ -384,7 +384,16 @@ class VPAWVisualizeWidget(
         with slicer.util.tryWithErrorDisplay(
             "Unable to compute isosurfaces; see exception message below.", waitCursor=True
         ):
-            self.logic.compute_isosurfaces()
+            try:
+                self.ui.computeIsosurfacesStackedWidget.setCurrentIndex(1) # show progress bar
+                def progress_callback(progress_percentage):
+                    self.ui.computeIsosurfacesProgressBar.setValue(progress_percentage)
+                progress_callback(0)
+                slicer.app.processEvents() # I found this was needed to get the widget to visually repaint before the progress increases in the computation. -E
+                self.logic.compute_isosurfaces(progress_callback)
+            finally:
+                self.ui.computeIsosurfacesStackedWidget.setCurrentIndex(0) # revert to showing button
+
 
 
 
@@ -755,11 +764,21 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         threeDView.resetFocalPoint()
 
 
-    def compute_isosurfaces(self):
+    def compute_isosurfaces(self, progress_callback=None):
         """ Compute isosurfaces of the laplace solution image, if one exists.
-        Raises exception if none exists. """
+        Raises exception if none exists.
+
+        Args:
+            progress_callback: Optionally, a function that takes a progress_percentage float value.
+                If this is provided then progress_callback(progress_percentage) will be called by compute_isosurfaces
+                while the computation is being done.
+        """
         if self.laplace_sol_node is None:
             raise Exception("No Laplace solution seems to be loaded.")
+
+        if progress_callback is None:
+            progress_callback = lambda progress_percentage : None
+            # defining a function that does nothing is cleaner than checking for None repeatedly below
 
         sol_node_name = self.laplace_sol_node.GetName()
 
@@ -771,7 +790,7 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         isosurface_values[-1] -= 0.02
 
         output_models = []
-        for value in isosurface_values:
+        for i,value in enumerate(isosurface_values):
             output_model_node = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLModelNode")
             output_models.append(output_model_node)
             output_model_node.SetName(f"{sol_node_name}_{value:0.2f}")
@@ -790,6 +809,7 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
                 slicer.mrmlScene.RemoveNode(cli_node)
                 raise ValueError("Grayscale Model Maker execution failed: " + errorText)
             slicer.mrmlScene.RemoveNode(cli_node)
+            progress_callback(50 * (i+1)/len(isosurface_values))
 
         # now output_models should be merged
         merged_model_node = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLModelNode")
@@ -808,12 +828,15 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
                 raise ValueError("Merge Models execution failed: " + errorText)
             slicer.mrmlScene.RemoveNode(cli_node)
 
+        number_of_merges_to_do = len(output_models) - 1
         merge_model_nodes(output_models[0], output_models[1], merged_model_node)
+        progress_callback(50 + 50 * 1/number_of_merges_to_do)
         slicer.mrmlScene.RemoveNode(output_models[0])
         slicer.mrmlScene.RemoveNode(output_models[1])
-        for model_node in output_models[2:]:
+        for i,model_node in enumerate(output_models[2:]):
             merge_model_nodes(merged_model_node, model_node, merged_model_node)
             slicer.mrmlScene.RemoveNode(model_node)
+            progress_callback(50 + 50 * (i+2)/number_of_merges_to_do)
 
 #
 # VPAWVisualizeTest
