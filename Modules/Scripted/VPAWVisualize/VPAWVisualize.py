@@ -7,6 +7,7 @@ import slicer
 import slicer.ScriptedLoadableModule
 import slicer.util
 import vtk
+import qt
 
 
 def summary_repr(contents):
@@ -186,11 +187,14 @@ class VPAWVisualizeWidget(
         self.ui.VPAWModelButton.connect("clicked(bool)", self.onVPAWModelButton)
         self.ui.showButton.connect("clicked(bool)", self.onShowButton)
         self.ui.computeIsosurfacesButton.connect("clicked(bool)", self.onComputeIsosurfacesButton)
+        self.updateComputeIsosurfacesButtonEnabledness()
 
         # Make sure parameter node is initialized (needed for module reload)
         self.initializeParameterNode()
 
         self.ui.subjectHierarchyTree.setMRMLScene(slicer.mrmlScene)
+        shNode = slicer.vtkMRMLSubjectHierarchyNode.GetSubjectHierarchyNode(slicer.mrmlScene)
+        self.addObserver(shNode, shNode.SubjectHierarchyItemModifiedEvent, self.shItemModifiedEvent)
 
     def cleanup(self):
         """
@@ -341,6 +345,11 @@ class VPAWVisualizeWidget(
 
         self._parameterNode.EndModify(wasModified)
 
+    @vtk.calldata_type(vtk.VTK_LONG)
+    def shItemModifiedEvent(self, caller, eventId, callData):
+        """Callback for when a subject hierarchy item is modified."""
+        qt.QTimer.singleShot(1000, self.updateComputeIsosurfacesButtonEnabledness)
+
     def onHomeButton(self):
         """
         Switch to the "Home" module when the user clicks the button.
@@ -374,6 +383,7 @@ class VPAWVisualizeWidget(
             self.logic.clearSubject()
             self.logic.loadNodesToSubjectHierarchy(list_of_files, self.ui.PatientPrefix.text)
             self.logic.arrangeView()
+            self.updateComputeIsosurfacesButtonEnabledness()
 
 
     def onComputeIsosurfacesButton(self):
@@ -393,6 +403,20 @@ class VPAWVisualizeWidget(
                 self.logic.compute_isosurfaces(progress_callback)
             finally:
                 self.ui.computeIsosurfacesStackedWidget.setCurrentIndex(0) # revert to showing button
+                self.updateComputeIsosurfacesButtonEnabledness()
+
+    def updateComputeIsosurfacesButtonEnabledness(self):
+        """Enable or disable the compute isosurfaces button based on state of the VPAWVisualizeLogic"""
+        if not self.logic.subjectIsCurrentlyLoaded():
+            self.ui.computeIsosurfacesButton.setEnabled(False)
+            self.ui.computeIsosurfacesButton.setToolTip("Load a subject to enable this")
+            return
+        if self.logic.isosurface_exists():
+            self.ui.computeIsosurfacesButton.setEnabled(False)
+            self.ui.computeIsosurfacesButton.setToolTip("Isosurfaces model already exists")
+            return
+        self.ui.computeIsosurfacesButton.setEnabled(True)
+        self.ui.computeIsosurfacesButton.setToolTip("Compute isosurfaces model from the laplace solution")
 
 
 
@@ -645,6 +669,7 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         and clear the subject hierarchy. """
         self.subject_id = None
         self.laplace_sol_node = None
+        self.laplace_isosurface_node = None
         self.clearSubjectHierarchy()
 
     def clearSubjectHierarchy(self):
@@ -654,6 +679,10 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
 
         slicer.mrmlScene.GetSubjectHierarchyNode().RemoveAllItems(True)
         self.show_nodes = list()
+
+    def subjectIsCurrentlyLoaded(self) -> bool:
+        """Whether a subject has been loaded."""
+        return self.subject_id is not None
 
     def loadOneNodeToSubjectHierarchy(self, shNode, subject_item, filename):
         """
@@ -774,7 +803,7 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
                 while the computation is being done.
         """
         if self.laplace_sol_node is None:
-            raise Exception("No Laplace solution seems to be loaded.")
+            raise RuntimeError("No Laplace solution seems to be loaded.")
 
         if progress_callback is None:
             progress_callback = lambda progress_percentage : None
@@ -837,6 +866,14 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
             merge_model_nodes(merged_model_node, model_node, merged_model_node)
             slicer.mrmlScene.RemoveNode(model_node)
             progress_callback(50 + 50 * (i+2)/number_of_merges_to_do)
+        self.laplace_isosurface_node = merged_model_node
+
+    def isosurface_exists(self) -> bool:
+        """Whether isosurface has already been computed"""
+        return (
+            self.laplace_isosurface_node is not None
+            and slicer.mrmlScene.GetNodeByID(self.laplace_isosurface_node.GetID()) is not None
+        )
 
 #
 # VPAWVisualizeTest
