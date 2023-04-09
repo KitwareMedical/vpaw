@@ -9,6 +9,7 @@ import slicer.util
 import vtk
 import qt
 import ctk
+from isosurfaces import isosurfaces_from_volume
 
 
 def summary_repr(contents):
@@ -392,7 +393,6 @@ class VPAWVisualizeWidget(
             self.logic.clearSubject()
             self.logic.loadNodesToSubjectHierarchy(list_of_files, self.ui.PatientPrefix.text)
             self.logic.arrangeView()
-            # qt.QTimer.singleShot(1000, self.logic.arrangeView)
             self.updateComputeIsosurfacesButtonEnabledness()
 
 
@@ -908,57 +908,18 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         if self.laplace_sol_masked_node is None:
             raise RuntimeError("No masked Laplace solution was found; there should be a volume node consisting of the Laplace solution restricted to the airway segmentation.")
 
-        if progress_callback is None:
-            progress_callback = lambda progress_percentage : None
-            # defining a function that does nothing is cleaner than checking for None repeatedly below
-
-        sol_node_name = self.laplace_sol_node.GetName()
-
         isosurface_values = np.linspace(0,1,11)
 
-        # marching cubes does not work great at actual min or max value
-        # so we leave a bit of room
+        # this does not work so well at actual min or max value so we leave a bit of room
         isosurface_values[0] += 0.02
         isosurface_values[-1] -= 0.02
 
-        output_models = []
-        for i,value in enumerate(isosurface_values):
-            output_model_node = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLModelNode")
-            output_models.append(output_model_node)
-            output_model_node.SetName(f"{sol_node_name}_{value:0.2f}")
-            parameters = {
-            'InputVolume' : self.laplace_sol_masked_node,
-            'OutputGeometry' : output_model_node,
-            'Threshold' : value,
-            'Smooth' : 0,
-            'Decimate' : 0.25,
-            'SplitNormals' : True,
-            'PointNormals' : True,
-            }
-            cli_node = slicer.cli.runSync(slicer.modules.grayscalemodelmaker, None, parameters)
-            if cli_node.GetStatus() & cli_node.ErrorsMask:
-                errorText = cli_node.GetErrorText()
-                slicer.mrmlScene.RemoveNode(cli_node)
-                raise ValueError("Grayscale Model Maker execution failed: " + errorText)
-            slicer.mrmlScene.RemoveNode(cli_node)
-            progress_callback(80 * (i+1)/len(isosurface_values))
-
-        # now output_models should be merged
-        merge_polydata_filter = vtk.vtkAppendPolyData()
-        for model_node in output_models:
-            merge_polydata_filter.AddInputConnection(model_node.GetPolyDataConnection())
-        merge_polydata_filter.Update()
-        progress_callback(90)
-        merged_model_node = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLModelNode")
-        merged_model_node.SetName(f"{sol_node_name}_isosurfaces")
-        merged_model_node.SetAndObservePolyData(merge_polydata_filter.GetOutput())
-        for model_node in output_models:
-            slicer.mrmlScene.RemoveNode(model_node)
-        progress_callback(100)
-        merged_model_node.CreateDefaultDisplayNodes()
-        merged_model_node.GetDisplayNode().SetVisibility(True)
-        self.put_node_under_subject(merged_model_node)
-        self.laplace_isosurface_node = merged_model_node
+        laplace_isosurface_node = isosurfaces_from_volume(self.laplace_sol_masked_node, isosurface_values, progress_callback=progress_callback)
+        laplace_isosurface_node.SetName(f"{self.laplace_sol_node.GetName()}_isosurfaces")
+        laplace_isosurface_node.CreateDefaultDisplayNodes()
+        laplace_isosurface_node.GetDisplayNode().SetVisibility(True)
+        self.put_node_under_subject(laplace_isosurface_node)
+        self.laplace_isosurface_node = laplace_isosurface_node
 
     def isosurface_exists(self) -> bool:
         """Whether isosurface has already been computed"""
