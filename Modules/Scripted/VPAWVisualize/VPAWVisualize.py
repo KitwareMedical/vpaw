@@ -852,6 +852,8 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         for model_node in output_models:
             slicer.mrmlScene.RemoveNode(model_node)
         progress_callback(100)
+        merged_model_node.CreateDefaultDisplayNodes()
+        merged_model_node.GetDisplayNode().SetVisibility(True)
         self.laplace_isosurface_node = merged_model_node
 
     def isosurface_exists(self) -> bool:
