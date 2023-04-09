@@ -410,7 +410,7 @@ class VPAWVisualizeWidget(
                     self.ui.computeIsosurfacesProgressBar.setValue(progress_percentage)
                 progress_callback(0)
                 slicer.app.processEvents() # I found this was needed to get the widget to visually repaint before the progress increases in the computation. -E
-                self.logic.compute_isosurfaces(progress_callback)
+                self.logic.compute_isosurfaces(self.ui.numberOfIsosurfaceValues.value, progress_callback)
             finally:
                 self.ui.computeIsosurfacesStackedWidget.setCurrentIndex(0) # revert to showing button
                 self.updateComputeIsosurfacesButtonEnabledness()
@@ -894,11 +894,12 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         threeDView.lookFromAxis(ctk.ctkAxesWidget.Left)
 
 
-    def compute_isosurfaces(self, progress_callback=None):
+    def compute_isosurfaces(self, num_isosurface_values:int, progress_callback=None):
         """ Compute isosurfaces of the laplace solution image, if one exists.
         Raises exception if none exists.
 
         Args:
+            num_isosurface_values: number of isosurface values
             progress_callback: Optionally, a function that takes a progress_percentage float value.
                 If this is provided then progress_callback(progress_percentage) will be called by compute_isosurfaces
                 while the computation is being done.
@@ -908,7 +909,7 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         if self.laplace_sol_masked_node is None:
             raise RuntimeError("No masked Laplace solution was found; there should be a volume node consisting of the Laplace solution restricted to the airway segmentation.")
 
-        isosurface_values = np.linspace(0,1,11)
+        isosurface_values = np.linspace(0,1,num_isosurface_values)
 
         # this does not work so well at actual min or max value so we leave a bit of room
         isosurface_values[0] += 0.02
