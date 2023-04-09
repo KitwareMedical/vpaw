@@ -668,6 +668,8 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         """ Set VPAWVisualizeLogic to initial state before any subject was loaded,
         and clear the subject hierarchy. """
         self.subject_id = None
+        self.input_image_node = None
+        self.centerline_node = None
         self.laplace_sol_node = None
         self.laplace_isosurface_node = None
         self.clearSubjectHierarchy()
@@ -713,8 +715,15 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         node = self.loadOneNode(filename, basename_repr, props)
         if node is None:
             return
-        if Path(filename).parent.stem == "sols":
+
+        dirname = Path(filename).parent.stem
+        if dirname == "sols":
             self.laplace_sol_node = node
+        elif dirname == 'images':
+            self.input_image_node = node
+        elif dirname == 'centerline':
+            self.centerline_node = node
+
         node_item = shNode.GetItemByDataNode(node)
         # The node item is assigned the subject item as its parent.
         shNode.SetItemParent(node_item, subject_item)
@@ -751,6 +760,8 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         for filename in list_of_files:
             self.loadOneNodeToSubjectHierarchy(shNode, subject_item, filename)
 
+        self.fix_image_origins_and_spacings()
+
         # Recursively set visibility and expanded properties of each item
         def recurseVisibility(item, visibility, expanded):
             # Useful functions for traversing items
@@ -775,6 +786,15 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         # Force re-displaying of the SubjectHierarchyTreeView
         slicer.mrmlScene.StartState(slicer.vtkMRMLScene.ImportState)
         slicer.mrmlScene.EndState(slicer.vtkMRMLScene.ImportState)
+
+    def fix_image_origins_and_spacings(self):
+        """Some nodes rely on others for origin and spacing info, because it wasn't properly saved
+        in the files from which we generate those nodes. This functions goes through and transfers
+        origin and spacing info whereever it is needed. """
+
+        if self.laplace_sol_node is not None and self.input_image_node is not None:
+            self.laplace_sol_node.SetOrigin(self.input_image_node.GetOrigin())
+            self.laplace_sol_node.SetSpacing(self.input_image_node.GetSpacing())
 
     def arrangeView(self):
         """
