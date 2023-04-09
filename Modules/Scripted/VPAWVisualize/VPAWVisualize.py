@@ -602,12 +602,17 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         A vtkMRMLMarkupsCurveNode
         """
         centerline_points, centerline_normals = contents
+
+        # The axis ordering is not IJK to begin with, hence this permuation
+        centerline_points = centerline_points[:,[2,1,0]]
+
         centerline_node = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLMarkupsCurveNode")
         centerline_node.SetName("Centerline")
         slicer.util.updateMarkupsControlPointsFromArray(centerline_node, centerline_points)
         centerline_node.GetDisplayNode().SetGlyphTypeFromString("Vertex2D")
         centerline_node.SetCurveTypeToLinear()
         centerline_node.LockedOn() # don't allow mouse interaction to move control points
+        centerline_node.GetDisplayNode().SetPropertiesLabelVisibility(False) # hide the text label because it distracts from landmarks
         return centerline_node
 
     def loadOneNode(self, filename, basename_repr, props):
@@ -670,6 +675,7 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         self.subject_id = None
         self.subject_item_id = None # subject hierarchy item id for the currently loaded subject
         self.input_image_node = None
+        self.input_ijk_to_ras = None
         self.centerline_node = None
         self.segmentation_node = None
         self.laplace_sol_node = None
@@ -735,6 +741,8 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
             self.centerline_node = node
         elif dirname == 'segmentations_computed':
             self.segmentation_node = node
+            # make segmentaton translucent so we can see centerline and isosurfaces clearly
+            self.segmentation_node.GetDisplayNode().SetOpacity3D(0.3)
 
         self.put_node_under_subject(node)
 
@@ -770,6 +778,8 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         for filename in list_of_files:
             self.loadOneNodeToSubjectHierarchy(shNode, self.subject_item_id, filename)
 
+        # further processing that can occur now that all nodes are loaded
+        self.create_input_ijk2ras_as_node()
         self.fix_image_origins_and_spacings()
         self.restrict_laplace_sol_to_segmentation()
 
@@ -798,14 +808,36 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         slicer.mrmlScene.StartState(slicer.vtkMRMLScene.ImportState)
         slicer.mrmlScene.EndState(slicer.vtkMRMLScene.ImportState)
 
+    def create_input_ijk2ras_as_node(self):
+        """Get the IJK to RAS matrix for the input image as a transform node."""
+        if self.input_image_node is None:
+            raise RuntimeError("Could not find input image node.")
+        ijkToRas = vtk.vtkMatrix4x4()
+        self.input_image_node.GetIJKToRASMatrix(ijkToRas)
+        ijkToRas_node = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLLinearTransformNode")
+        ijkToRas_node.SetName(f"{self.input_image_node.GetName()}_IJK_to_RAS")
+        ijkToRas_node.SetMatrixTransformToParent(ijkToRas)
+        self.put_node_under_subject(ijkToRas_node)
+        self.input_ijk_to_ras = ijkToRas_node
+
     def fix_image_origins_and_spacings(self):
         """Some nodes rely on others for origin and spacing info, because it wasn't properly saved
         in the files from which we generate those nodes. This functions goes through and transfers
         origin and spacing info whereever it is needed. """
 
-        if self.laplace_sol_node is not None and self.input_image_node is not None:
-            self.laplace_sol_node.SetOrigin(self.input_image_node.GetOrigin())
-            self.laplace_sol_node.SetSpacing(self.input_image_node.GetSpacing())
+        if self.laplace_sol_node is None:
+            raise RuntimeError("Could not find laplace solution node.")
+        if self.input_image_node is None:
+            raise RuntimeError("Could not find input image node.")
+        if self.input_ijk_to_ras is None:
+            raise RuntimeError("IJK to RAS transform node has not been created.")
+        if self.centerline_node is None:
+            raise RuntimeError("Could not find centerline node.")
+
+        self.laplace_sol_node.SetOrigin(self.input_image_node.GetOrigin())
+        self.laplace_sol_node.SetSpacing(self.input_image_node.GetSpacing())
+
+        self.centerline_node.SetAndObserveTransformNodeID(self.input_ijk_to_ras.GetID())
 
     def restrict_laplace_sol_to_segmentation(self):
         """If the laplace solution and the segmentation node both exist, mask the laplace solution
@@ -866,9 +898,6 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         if progress_callback is None:
             progress_callback = lambda progress_percentage : None
             # defining a function that does nothing is cleaner than checking for None repeatedly below
-
-        # Make segmentaton translucent so we can see the isosurfaces clearly
-        self.segmentation_node.GetDisplayNode().SetOpacity3D(0.3)
 
         sol_node_name = self.laplace_sol_node.GetName()
 
