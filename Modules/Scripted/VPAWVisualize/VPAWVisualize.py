@@ -867,6 +867,9 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
             progress_callback = lambda progress_percentage : None
             # defining a function that does nothing is cleaner than checking for None repeatedly below
 
+        # Make segmentaton translucent so we can see the isosurfaces clearly
+        self.segmentation_node.GetDisplayNode().SetOpacity3D(0.3)
+
         sol_node_name = self.laplace_sol_node.GetName()
 
         isosurface_values = np.linspace(0,1,11)
