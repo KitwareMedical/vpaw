@@ -348,7 +348,7 @@ class VPAWVisualizeWidget(
     @vtk.calldata_type(vtk.VTK_LONG)
     def shItemModifiedEvent(self, caller, eventId, callData):
         """Callback for when a subject hierarchy item is modified."""
-        qt.QTimer.singleShot(1000, self.updateComputeIsosurfacesButtonEnabledness)
+        qt.QTimer.singleShot(2000, self.updateComputeIsosurfacesButtonEnabledness)
 
     def onHomeButton(self):
         """
@@ -838,34 +838,20 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
                 slicer.mrmlScene.RemoveNode(cli_node)
                 raise ValueError("Grayscale Model Maker execution failed: " + errorText)
             slicer.mrmlScene.RemoveNode(cli_node)
-            progress_callback(50 * (i+1)/len(isosurface_values))
+            progress_callback(80 * (i+1)/len(isosurface_values))
 
         # now output_models should be merged
+        merge_polydata_filter = vtk.vtkAppendPolyData()
+        for model_node in output_models:
+            merge_polydata_filter.AddInputConnection(model_node.GetPolyDataConnection())
+        merge_polydata_filter.Update()
+        progress_callback(90)
         merged_model_node = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLModelNode")
         merged_model_node.SetName(f"{sol_node_name}_isosurfaces")
-
-        def merge_model_nodes(node1, node2, output_node):
-            parameters = {
-                'Model1' : node1,
-                'Model2' : node2,
-                'ModelOutput' : output_node,
-            }
-            cli_node = slicer.cli.runSync(slicer.modules.mergemodels, None, parameters)
-            if cli_node.GetStatus() & cli_node.ErrorsMask:
-                errorText = cli_node.GetErrorText()
-                slicer.mrmlScene.RemoveNode(cli_node)
-                raise ValueError("Merge Models execution failed: " + errorText)
-            slicer.mrmlScene.RemoveNode(cli_node)
-
-        number_of_merges_to_do = len(output_models) - 1
-        merge_model_nodes(output_models[0], output_models[1], merged_model_node)
-        progress_callback(50 + 50 * 1/number_of_merges_to_do)
-        slicer.mrmlScene.RemoveNode(output_models[0])
-        slicer.mrmlScene.RemoveNode(output_models[1])
-        for i,model_node in enumerate(output_models[2:]):
-            merge_model_nodes(merged_model_node, model_node, merged_model_node)
+        merged_model_node.SetAndObservePolyData(merge_polydata_filter.GetOutput())
+        for model_node in output_models:
             slicer.mrmlScene.RemoveNode(model_node)
-            progress_callback(50 + 50 * (i+2)/number_of_merges_to_do)
+        progress_callback(100)
         self.laplace_isosurface_node = merged_model_node
 
     def isosurface_exists(self) -> bool:

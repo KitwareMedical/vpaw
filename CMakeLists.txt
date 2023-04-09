@@ -113,7 +113,6 @@ set(Slicer_CLIMODULES_ENABLED
   ResampleDTIVolume             # Needed by ResampleScalarVectorDWIVolume
   ResampleScalarVectorDWIVolume # Depends on DiffusionApplications, needed by CropVolume
   GrayscaleModelMaker
-  MergeModels
   )
 set(Slicer_QTLOADABLEMODULES_ENABLED
   )
