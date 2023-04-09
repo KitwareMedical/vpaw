@@ -198,6 +198,7 @@ class VPAWVisualizeWidget(
         self.ui.showButton.connect("clicked(bool)", self.onShowButton)
         self.ui.computeIsosurfacesButton.connect("clicked(bool)", self.onComputeIsosurfacesButton)
         self.updateComputeIsosurfacesButtonEnabledness()
+        self.ui.segmentationOpacitySlider.connect("valueChanged(int)", self.onSegmentationOpacitySliderValueChanged)
 
         # Make sure parameter node is initialized (needed for module reload)
         self.initializeParameterNode()
@@ -394,6 +395,7 @@ class VPAWVisualizeWidget(
             self.logic.loadNodesToSubjectHierarchy(list_of_files, self.ui.PatientPrefix.text)
             self.logic.arrangeView()
             self.updateComputeIsosurfacesButtonEnabledness()
+            self.onSegmentationOpacitySliderValueChanged(self.ui.segmentationOpacitySlider.value)
 
 
     def onComputeIsosurfacesButton(self):
@@ -414,6 +416,9 @@ class VPAWVisualizeWidget(
             finally:
                 self.ui.computeIsosurfacesStackedWidget.setCurrentIndex(0) # revert to showing button
                 self.updateComputeIsosurfacesButtonEnabledness()
+
+    def onSegmentationOpacitySliderValueChanged(self, value:int):
+        self.logic.set_segmentation_node_opacity(value/self.ui.segmentationOpacitySlider.maximum)
 
     def updateComputeIsosurfacesButtonEnabledness(self):
         """Enable or disable the compute isosurfaces button based on state of the VPAWVisualizeLogic"""
@@ -751,8 +756,6 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
             self.centerline_node = node
         elif dirname == 'segmentations_computed':
             self.segmentation_node = node
-            # make segmentaton translucent so we can see centerline and isosurfaces clearly
-            self.segmentation_node.GetDisplayNode().SetOpacity3D(0.3)
 
         self.put_node_under_subject(node)
 
@@ -893,6 +896,11 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         threeDView.resetCamera(False, False, True)
         threeDView.lookFromAxis(ctk.ctkAxesWidget.Left)
 
+    def set_segmentation_node_opacity(self, opacity):
+        """Set segmentation node opacity, a float in [0,1], if segmentation node exists.
+        If segmentation node doesn't exist, this simply does nothing."""
+        if self.segmentation_node is not None:
+            self.segmentation_node.GetDisplayNode().SetOpacity3D(opacity)
 
     def compute_isosurfaces(self, num_isosurface_values:int, progress_callback=None):
         """ Compute isosurfaces of the laplace solution image, if one exists.
