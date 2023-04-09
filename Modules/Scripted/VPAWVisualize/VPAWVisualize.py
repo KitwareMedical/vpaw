@@ -8,6 +8,7 @@ import slicer.ScriptedLoadableModule
 import slicer.util
 import vtk
 import qt
+import ctk
 
 
 def summary_repr(contents):
@@ -158,6 +159,14 @@ class VPAWVisualizeWidget(
         # qMRMLWidget's "mrmlSceneChanged(vtkMRMLScene*)" signal in is connected to each
         # MRML widget's.  "setMRMLScene(vtkMRMLScene*)" slot.
         uiWidget.setMRMLScene(slicer.mrmlScene)
+
+        # Configure 3D view
+        viewNode = slicer.app.layoutManager().threeDWidget(0).mrmlViewNode()
+        viewNode.SetBackgroundColor(0,0,0)
+        viewNode.SetBackgroundColor2(0,0,0)
+        viewNode.SetAxisLabelsVisible(False)
+        viewNode.SetBoxVisible(False)
+        viewNode.SetOrientationMarkerType(slicer.vtkMRMLAbstractViewNode.OrientationMarkerTypeAxes)
 
         # Create logic class. Logic implements all computations that should be possible
         # to run in batch mode, without a graphical user interface.
@@ -383,6 +392,7 @@ class VPAWVisualizeWidget(
             self.logic.clearSubject()
             self.logic.loadNodesToSubjectHierarchy(list_of_files, self.ui.PatientPrefix.text)
             self.logic.arrangeView()
+            # qt.QTimer.singleShot(1000, self.logic.arrangeView)
             self.updateComputeIsosurfacesButtonEnabledness()
 
 
@@ -878,7 +888,10 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         layoutManager = slicer.app.layoutManager()
         threeDWidget = layoutManager.threeDWidget(0)
         threeDView = threeDWidget.threeDView()
+        threeDView.lookFromAxis(ctk.ctkAxesWidget.Left)
         threeDView.resetFocalPoint()
+        threeDView.resetCamera(False, False, True)
+        threeDView.lookFromAxis(ctk.ctkAxesWidget.Left)
 
 
     def compute_isosurfaces(self, progress_callback=None):
