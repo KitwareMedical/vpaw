@@ -668,9 +668,12 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         """ Set VPAWVisualizeLogic to initial state before any subject was loaded,
         and clear the subject hierarchy. """
         self.subject_id = None
+        self.subject_item_id = None # subject hierarchy item id for the currently loaded subject
         self.input_image_node = None
         self.centerline_node = None
+        self.segmentation_node = None
         self.laplace_sol_node = None
+        self.laplace_sol_masked_node = None
         self.laplace_isosurface_node = None
         self.clearSubjectHierarchy()
 
@@ -685,6 +688,13 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
     def subjectIsCurrentlyLoaded(self) -> bool:
         """Whether a subject has been loaded."""
         return self.subject_id is not None
+
+    def put_node_under_subject(self, node):
+        """Move the given node in the subject hierarchy such that it becomes a child of the
+        subject item for the currently loaded subject. """
+        shNode = slicer.mrmlScene.GetSubjectHierarchyNode()
+        node_item = shNode.GetItemByDataNode(node)
+        shNode.SetItemParent(node_item, self.subject_item_id)
 
     def loadOneNodeToSubjectHierarchy(self, shNode, subject_item, filename):
         """
@@ -723,10 +733,10 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
             self.input_image_node = node
         elif dirname == 'centerline':
             self.centerline_node = node
+        elif dirname == 'segmentations_computed':
+            self.segmentation_node = node
 
-        node_item = shNode.GetItemByDataNode(node)
-        # The node item is assigned the subject item as its parent.
-        shNode.SetItemParent(node_item, subject_item)
+        self.put_node_under_subject(node)
 
     def loadNodesToSubjectHierarchy(self, list_of_files, subject_name):
         """
@@ -748,19 +758,20 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         # node.
         shNode = slicer.mrmlScene.GetSubjectHierarchyNode()
         # A subject item is created with the subject hierarchy node as its parent.
-        subject_item = shNode.CreateSubjectItem(shNode.GetSceneItemID(), subject_name)
+        self.subject_item_id = shNode.CreateSubjectItem(shNode.GetSceneItemID(), subject_name)
 
         # slicer knows how to find the subject hierarchy tree view.
         shTV = slicer.qMRMLSubjectHierarchyTreeView()
         # Tell the subject hierarchy tree view about its enclosing scene.
         shTV.setMRMLScene(slicer.mrmlScene)
         # Tell the subject hierarchy tree view that its root item is the subject item.
-        shTV.setRootItem(subject_item)
+        shTV.setRootItem(self.subject_item_id)
 
         for filename in list_of_files:
-            self.loadOneNodeToSubjectHierarchy(shNode, subject_item, filename)
+            self.loadOneNodeToSubjectHierarchy(shNode, self.subject_item_id, filename)
 
         self.fix_image_origins_and_spacings()
+        self.restrict_laplace_sol_to_segmentation()
 
         # Recursively set visibility and expanded properties of each item
         def recurseVisibility(item, visibility, expanded):
@@ -779,7 +790,7 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
                     expanded,
                 )
 
-        recurseVisibility(subject_item, True, True)
+        recurseVisibility(self.subject_item_id, True, True)
 
         # Resize columns of the SubjectHierarchyTreeView
         shTV.header().resizeSections(shTV.header().ResizeToContents)
@@ -795,6 +806,31 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         if self.laplace_sol_node is not None and self.input_image_node is not None:
             self.laplace_sol_node.SetOrigin(self.input_image_node.GetOrigin())
             self.laplace_sol_node.SetSpacing(self.input_image_node.GetSpacing())
+
+    def restrict_laplace_sol_to_segmentation(self):
+        """If the laplace solution and the segmentation node both exist, mask the laplace solution
+        volume by the segmentation node. If either of them doesn't exists, raise an exception."""
+
+        if self.segmentation_node is None:
+            raise RuntimeError("Could not find segmentation node.")
+        if self.laplace_sol_node is None:
+            raise RuntimeError("Could not find laplace solution node.")
+
+        sol_array = slicer.util.arrayFromVolume(self.laplace_sol_node)
+
+        seg_ids = self.segmentation_node.GetSegmentation().GetSegmentIDs()
+        if len(seg_ids) != 1:
+            raise RuntimeError(f"Expected node {self.segmentation_node.GetName()} to have exactly one segmentation.")
+        seg_array = slicer.util.arrayFromSegmentBinaryLabelmap(self.segmentation_node, seg_ids[0], self.laplace_sol_node)
+
+        sol_masked_array = np.copy(sol_array)
+        sol_masked_array[seg_array==0] = np.nan
+
+        sol_masked_node = slicer.modules.volumes.logic().CloneVolume(self.laplace_sol_node, self.laplace_sol_node.GetName()+"_restrictedToSegmentation")
+        slicer.util.updateVolumeFromArray(sol_masked_node, sol_masked_array)
+        self.put_node_under_subject(sol_masked_node)
+        self.laplace_sol_masked_node = sol_masked_node
+
 
     def arrangeView(self):
         """
@@ -823,7 +859,9 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
                 while the computation is being done.
         """
         if self.laplace_sol_node is None:
-            raise RuntimeError("No Laplace solution seems to be loaded.")
+            raise RuntimeError("No Laplace solution seems to have been loaded.")
+        if self.laplace_sol_masked_node is None:
+            raise RuntimeError("No masked Laplace solution was found; there should be a volume node consisting of the Laplace solution restricted to the airway segmentation.")
 
         if progress_callback is None:
             progress_callback = lambda progress_percentage : None
@@ -844,7 +882,7 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
             output_models.append(output_model_node)
             output_model_node.SetName(f"{sol_node_name}_{value:0.2f}")
             parameters = {
-            'InputVolume' : self.laplace_sol_node,
+            'InputVolume' : self.laplace_sol_masked_node,
             'OutputGeometry' : output_model_node,
             'Threshold' : value,
             'Smooth' : 0,
@@ -874,6 +912,7 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         progress_callback(100)
         merged_model_node.CreateDefaultDisplayNodes()
         merged_model_node.GetDisplayNode().SetVisibility(True)
+        self.put_node_under_subject(merged_model_node)
         self.laplace_isosurface_node = merged_model_node
 
     def isosurface_exists(self) -> bool:
