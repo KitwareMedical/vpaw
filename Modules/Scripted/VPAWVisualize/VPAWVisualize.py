@@ -9,7 +9,7 @@ import slicer.util
 import vtk
 import qt
 import ctk
-from isosurfaces import isosurfaces_from_volume
+from vpawvisualizelib.isosurfaces import isosurfaces_from_volume
 
 
 def summary_repr(contents):

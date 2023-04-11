@@ -4,7 +4,8 @@ set(MODULE_NAME VPAWVisualize)
 #-----------------------------------------------------------------------------
 set(MODULE_PYTHON_SCRIPTS
   ${MODULE_NAME}.py
-  isosurfaces.py
+  vpawvisualizelib/__init__.py
+  vpawvisualizelib/isosurfaces.py
   )
 
 set(MODULE_PYTHON_RESOURCES
