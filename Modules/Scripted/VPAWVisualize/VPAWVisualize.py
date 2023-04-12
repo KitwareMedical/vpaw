@@ -1,11 +1,15 @@
 import logging
 import numpy as np
 import os
+from pathlib import Path
 import pickle as pk
 import slicer
 import slicer.ScriptedLoadableModule
 import slicer.util
 import vtk
+import qt
+import ctk
+from vpawvisualizelib.isosurfaces import isosurfaces_from_volume
 
 
 def summary_repr(contents):
@@ -157,6 +161,16 @@ class VPAWVisualizeWidget(
         # MRML widget's.  "setMRMLScene(vtkMRMLScene*)" slot.
         uiWidget.setMRMLScene(slicer.mrmlScene)
 
+        # Configure 3D view
+        viewNode = slicer.app.layoutManager().threeDWidget(0).mrmlViewNode()
+        viewNode.SetBackgroundColor(0, 0, 0)
+        viewNode.SetBackgroundColor2(0, 0, 0)
+        viewNode.SetAxisLabelsVisible(False)
+        viewNode.SetBoxVisible(False)
+        viewNode.SetOrientationMarkerType(
+            slicer.vtkMRMLAbstractViewNode.OrientationMarkerTypeAxes
+        )
+
         # Create logic class. Logic implements all computations that should be possible
         # to run in batch mode, without a graphical user interface.
         self.logic = VPAWVisualizeLogic()
@@ -184,11 +198,24 @@ class VPAWVisualizeWidget(
         self.ui.HomeButton.connect("clicked(bool)", self.onHomeButton)
         self.ui.VPAWModelButton.connect("clicked(bool)", self.onVPAWModelButton)
         self.ui.showButton.connect("clicked(bool)", self.onShowButton)
+        self.ui.computeIsosurfacesButton.connect(
+            "clicked(bool)", self.onComputeIsosurfacesButton
+        )
+        self.updateComputeIsosurfacesButtonEnabledness()
+        self.ui.segmentationOpacitySlider.connect(
+            "valueChanged(int)", self.onSegmentationOpacitySliderValueChanged
+        )
 
         # Make sure parameter node is initialized (needed for module reload)
         self.initializeParameterNode()
 
         self.ui.subjectHierarchyTree.setMRMLScene(slicer.mrmlScene)
+        shNode = slicer.vtkMRMLSubjectHierarchyNode.GetSubjectHierarchyNode(
+            slicer.mrmlScene
+        )
+        self.addObserver(
+            shNode, shNode.SubjectHierarchyItemModifiedEvent, self.shItemModifiedEvent
+        )
 
     def cleanup(self):
         """
@@ -297,7 +324,10 @@ class VPAWVisualizeWidget(
         self.ui.PatientPrefix.text = self._parameterNode.GetParameter("PatientPrefix")
 
         # Update buttons states and tooltips
-        if os.path.isdir(self.ui.DataDirectory.currentPath):
+        if (
+            os.path.isdir(self.ui.DataDirectory.currentPath)
+            and self.ui.PatientPrefix.text != ""
+        ):
             # Enable show button
             self.ui.showButton.toolTip = (
                 f"Show files from {repr(self.ui.DataDirectory.currentPath)}"
@@ -311,7 +341,8 @@ class VPAWVisualizeWidget(
         else:
             # Disable show button
             self.ui.showButton.toolTip = (
-                "Show is disabled; first select a valid data directory"
+                "Show is disabled; first select a valid "
+                "data directory and patient prefix."
             )
             self.ui.showButton.enabled = False
 
@@ -339,6 +370,11 @@ class VPAWVisualizeWidget(
 
         self._parameterNode.EndModify(wasModified)
 
+    @vtk.calldata_type(vtk.VTK_LONG)
+    def shItemModifiedEvent(self, caller, eventId, callData):
+        """Callback for when a subject hierarchy item is modified."""
+        qt.QTimer.singleShot(2000, self.updateComputeIsosurfacesButtonEnabledness)
+
     def onHomeButton(self):
         """
         Switch to the "Home" module when the user clicks the button.
@@ -362,20 +398,74 @@ class VPAWVisualizeWidget(
         with slicer.util.tryWithErrorDisplay(
             "Failed to show patient data.", waitCursor=True
         ):
-
-            # Compute output
+            if self.ui.PatientPrefix.text == "":
+                raise ValueError("Provide a patient prefix for which to show data.")
             list_of_files = self.logic.find_and_sort_files_with_prefix(
                 self.ui.DataDirectory.currentPath, self.ui.PatientPrefix.text
             )
-            # Display output
-            subject_name = (
-                self.ui.PatientPrefix.text
-                if self.ui.PatientPrefix.text != ""
-                else "All"
+            if len(list_of_files) == 0:
+                raise FileNotFoundError("No patient found with the given prefix.")
+            self.logic.clearSubject()
+            self.logic.loadNodesToSubjectHierarchy(
+                list_of_files, self.ui.PatientPrefix.text
             )
-            self.logic.clearSubjectHierarchy()
-            self.logic.loadNodesToSubjectHierarchy(list_of_files, subject_name)
             self.logic.arrangeView()
+            self.updateComputeIsosurfacesButtonEnabledness()
+            self.onSegmentationOpacitySliderValueChanged(
+                self.ui.segmentationOpacitySlider.value
+            )
+
+    def onComputeIsosurfacesButton(self):
+        """
+        Compute isosurfaces of the laplace sol'n image
+        """
+
+        with slicer.util.tryWithErrorDisplay(
+            "Unable to compute isosurfaces; see exception message below.",
+            waitCursor=True,
+        ):
+            try:
+                self.ui.computeIsosurfacesStackedWidget.setCurrentIndex(
+                    1
+                )  # show progress bar
+
+                def progress_callback(progress_percentage):
+                    self.ui.computeIsosurfacesProgressBar.setValue(progress_percentage)
+
+                progress_callback(0)
+                # I found the following processEvents call was needed to get the widget to visually
+                # repaint before the progress increases in the computation. -E
+                slicer.app.processEvents()
+                self.logic.compute_isosurfaces(
+                    self.ui.numberOfIsosurfaceValues.value, progress_callback
+                )
+            finally:
+                self.ui.computeIsosurfacesStackedWidget.setCurrentIndex(
+                    0
+                )  # revert to showing button
+                self.updateComputeIsosurfacesButtonEnabledness()
+
+    def onSegmentationOpacitySliderValueChanged(self, value: int):
+        self.logic.set_segmentation_node_opacity(
+            value / self.ui.segmentationOpacitySlider.maximum
+        )
+
+    def updateComputeIsosurfacesButtonEnabledness(self):
+        """Enable or disable the compute isosurfaces button based on state of the VPAWVisualizeLogic"""
+        if not self.logic.subjectIsCurrentlyLoaded():
+            self.ui.computeIsosurfacesButton.setEnabled(False)
+            self.ui.computeIsosurfacesButton.setToolTip("Load a subject to enable this")
+            return
+        if self.logic.isosurface_exists():
+            self.ui.computeIsosurfacesButton.setEnabled(False)
+            self.ui.computeIsosurfacesButton.setToolTip(
+                "Isosurfaces model already exists"
+            )
+            return
+        self.ui.computeIsosurfacesButton.setEnabled(True)
+        self.ui.computeIsosurfacesButton.setToolTip(
+            "Compute isosurfaces model from the laplace solution"
+        )
 
 
 #
@@ -398,7 +488,7 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         """
 
         slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic.__init__(self)
-        self.clearSubjectHierarchy()
+        self.clearSubject()
 
     def setDefaultParameters(self, parameterNode):
         """
@@ -472,9 +562,9 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
 
         Parameters
         ----------
-        path : str
+        dataDirectory : str
             The top-level directory to be scanned for files.
-        prefix: str
+        patientPrefix: str
             A value such as "1000_" will find all proper files that have basenames that
             start with that string.  If prefix=="" then all files regardless of name
             will be reported.
@@ -502,7 +592,7 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         logging.info("Processing started")
 
         list_of_records = self.find_files_with_prefix(
-            dataDirectory, patientPrefix, include_subjectless=True
+            dataDirectory, patientPrefix, include_subjectless=False
         )
         # Sort by modification time
         list_of_records.sort(key=lambda record: record[1])
@@ -535,11 +625,45 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         with open(filename, "rb") as f:
             contents = pk.load(f)
 
+        if Path(filename).parent.stem == "centerline":
+            return self.loadCenterlineFromP3FileContents(contents)
+
         print(f"File type for {filename} is not currently supported")
         print(f"{filename} contains {summary_repr(contents)}")  # !!!
         # !!! Create node from contents
 
         return None
+
+    def loadCenterlineFromP3FileContents(self, contents):
+        """
+        Load a centerline using the data object written into a P3 file named "####_CENTERLINE.p3"
+
+        Parameters
+        ----------
+        contents : a pair of arrays (centerline_points, centerline_normals). Currently we only use
+            centerline_points, piecing them together into a curve node.
+
+        Returns
+        -------
+        A vtkMRMLMarkupsCurveNode
+        """
+        centerline_points, centerline_normals = contents
+
+        # The axis ordering is not IJK to begin with, hence this permuation
+        centerline_points = centerline_points[:, [2, 1, 0]]
+
+        centerline_node = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLMarkupsCurveNode")
+        centerline_node.SetName("Centerline")
+        slicer.util.updateMarkupsControlPointsFromArray(
+            centerline_node, centerline_points
+        )
+        centerline_node.GetDisplayNode().SetGlyphTypeFromString("Vertex2D")
+        centerline_node.SetCurveTypeToLinear()
+        centerline_node.LockedOn()  # don't allow mouse interaction to move control points
+        centerline_node.GetDisplayNode().SetPropertiesLabelVisibility(
+            False
+        )  # hide the text label because it distracts from landmarks
+        return centerline_node
 
     def loadOneNode(self, filename, basename_repr, props):
         """
@@ -579,6 +703,8 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
                 node = slicer.util.loadVolume(filename, properties=props)
         elif filename.endswith(".fcsv"):
             node = slicer.util.loadMarkups(filename)
+            assert node.IsTypeOf("vtkMRMLMarkupsNode")
+            node.LockedOn()  # don't allow mouse interaction to move control points
         elif filename.endswith(".mha"):
             node = slicer.util.loadVolume(filename, properties=props)
         elif filename.endswith(".png"):
@@ -593,6 +719,22 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
             node = None
         return node
 
+    def clearSubject(self):
+        """Set VPAWVisualizeLogic to initial state before any subject was loaded,
+        and clear the subject hierarchy."""
+        self.subject_id = None
+        self.subject_item_id = (
+            None  # subject hierarchy item id for the currently loaded subject
+        )
+        self.input_image_node = None
+        self.input_ijk_to_ras = None
+        self.centerline_node = None
+        self.segmentation_node = None
+        self.laplace_sol_node = None
+        self.laplace_sol_masked_node = None
+        self.laplace_isosurface_node = None
+        self.clearSubjectHierarchy()
+
     def clearSubjectHierarchy(self):
         """
         Remove all nodes from the 3D Slicer subject hierarchy
@@ -600,6 +742,17 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
 
         slicer.mrmlScene.GetSubjectHierarchyNode().RemoveAllItems(True)
         self.show_nodes = list()
+
+    def subjectIsCurrentlyLoaded(self) -> bool:
+        """Whether a subject has been loaded."""
+        return self.subject_id is not None
+
+    def put_node_under_subject(self, node):
+        """Move the given node in the subject hierarchy such that it becomes a child of the
+        subject item for the currently loaded subject."""
+        shNode = slicer.mrmlScene.GetSubjectHierarchyNode()
+        node_item = shNode.GetItemByDataNode(node)
+        shNode.SetItemParent(node_item, self.subject_item_id)
 
     def loadOneNodeToSubjectHierarchy(self, shNode, subject_item, filename):
         """
@@ -630,9 +783,18 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         node = self.loadOneNode(filename, basename_repr, props)
         if node is None:
             return
-        node_item = shNode.GetItemByDataNode(node)
-        # The node item is assigned the subject item as its parent.
-        shNode.SetItemParent(node_item, subject_item)
+
+        dirname = Path(filename).parent.stem
+        if dirname == "sols":
+            self.laplace_sol_node = node
+        elif dirname == "images":
+            self.input_image_node = node
+        elif dirname == "centerline":
+            self.centerline_node = node
+        elif dirname == "segmentations_computed":
+            self.segmentation_node = node
+
+        self.put_node_under_subject(node)
 
     def loadNodesToSubjectHierarchy(self, list_of_files, subject_name):
         """
@@ -647,22 +809,31 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
             Name for folder in subject hierarchy to contain the nodes
         """
 
+        self.subject_id = subject_name
+
         # The subject hierarchy node can contain subject (patient), study (optionally),
         # and node items.  slicer.mrmlScene knows how to find the subject hierarchy
         # node.
         shNode = slicer.mrmlScene.GetSubjectHierarchyNode()
         # A subject item is created with the subject hierarchy node as its parent.
-        subject_item = shNode.CreateSubjectItem(shNode.GetSceneItemID(), subject_name)
+        self.subject_item_id = shNode.CreateSubjectItem(
+            shNode.GetSceneItemID(), subject_name
+        )
 
         # slicer knows how to find the subject hierarchy tree view.
         shTV = slicer.qMRMLSubjectHierarchyTreeView()
         # Tell the subject hierarchy tree view about its enclosing scene.
         shTV.setMRMLScene(slicer.mrmlScene)
         # Tell the subject hierarchy tree view that its root item is the subject item.
-        shTV.setRootItem(subject_item)
+        shTV.setRootItem(self.subject_item_id)
 
         for filename in list_of_files:
-            self.loadOneNodeToSubjectHierarchy(shNode, subject_item, filename)
+            self.loadOneNodeToSubjectHierarchy(shNode, self.subject_item_id, filename)
+
+        # further processing that can occur now that all nodes are loaded
+        self.create_input_ijk2ras_as_node()
+        self.fix_image_origins_and_spacings()
+        self.restrict_laplace_sol_to_segmentation()
 
         # Recursively set visibility and expanded properties of each item
         def recurseVisibility(item, visibility, expanded):
@@ -681,13 +852,76 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
                     expanded,
                 )
 
-        recurseVisibility(subject_item, True, True)
+        recurseVisibility(self.subject_item_id, True, True)
 
         # Resize columns of the SubjectHierarchyTreeView
         shTV.header().resizeSections(shTV.header().ResizeToContents)
         # Force re-displaying of the SubjectHierarchyTreeView
         slicer.mrmlScene.StartState(slicer.vtkMRMLScene.ImportState)
         slicer.mrmlScene.EndState(slicer.vtkMRMLScene.ImportState)
+
+    def create_input_ijk2ras_as_node(self):
+        """Get the IJK to RAS matrix for the input image as a transform node."""
+        if self.input_image_node is None:
+            raise RuntimeError("Could not find input image node.")
+        ijkToRas = vtk.vtkMatrix4x4()
+        self.input_image_node.GetIJKToRASMatrix(ijkToRas)
+        ijkToRas_node = slicer.mrmlScene.AddNewNodeByClass("vtkMRMLLinearTransformNode")
+        ijkToRas_node.SetName(f"{self.input_image_node.GetName()}_IJK_to_RAS")
+        ijkToRas_node.SetMatrixTransformToParent(ijkToRas)
+        self.put_node_under_subject(ijkToRas_node)
+        self.input_ijk_to_ras = ijkToRas_node
+
+    def fix_image_origins_and_spacings(self):
+        """Some nodes rely on others for origin and spacing info, because it wasn't properly saved
+        in the files from which we generate those nodes. This functions goes through and transfers
+        origin and spacing info whereever it is needed."""
+
+        if self.laplace_sol_node is None:
+            raise RuntimeError("Could not find laplace solution node.")
+        if self.input_image_node is None:
+            raise RuntimeError("Could not find input image node.")
+        if self.input_ijk_to_ras is None:
+            raise RuntimeError("IJK to RAS transform node has not been created.")
+        if self.centerline_node is None:
+            raise RuntimeError("Could not find centerline node.")
+
+        self.laplace_sol_node.SetOrigin(self.input_image_node.GetOrigin())
+        self.laplace_sol_node.SetSpacing(self.input_image_node.GetSpacing())
+
+        self.centerline_node.SetAndObserveTransformNodeID(self.input_ijk_to_ras.GetID())
+
+    def restrict_laplace_sol_to_segmentation(self):
+        """If the laplace solution and the segmentation node both exist, mask the laplace solution
+        volume by the segmentation node. If either of them doesn't exists, raise an exception."""
+
+        if self.segmentation_node is None:
+            raise RuntimeError("Could not find segmentation node.")
+        if self.laplace_sol_node is None:
+            raise RuntimeError("Could not find laplace solution node.")
+
+        sol_array = slicer.util.arrayFromVolume(self.laplace_sol_node)
+
+        seg_ids = self.segmentation_node.GetSegmentation().GetSegmentIDs()
+        if len(seg_ids) != 1:
+            raise RuntimeError(
+                f"Expected node {self.segmentation_node.GetName()} to have"
+                " exactly one segmentation."
+            )
+        seg_array = slicer.util.arrayFromSegmentBinaryLabelmap(
+            self.segmentation_node, seg_ids[0], self.laplace_sol_node
+        )
+
+        sol_masked_array = np.copy(sol_array)
+        sol_masked_array[seg_array == 0] = np.nan
+
+        sol_masked_node = slicer.modules.volumes.logic().CloneVolume(
+            self.laplace_sol_node,
+            self.laplace_sol_node.GetName() + "_restrictedToSegmentation",
+        )
+        slicer.util.updateVolumeFromArray(sol_masked_node, sol_masked_array)
+        self.put_node_under_subject(sol_masked_node)
+        self.laplace_sol_masked_node = sol_masked_node
 
     def arrangeView(self):
         """
@@ -703,7 +937,61 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         layoutManager = slicer.app.layoutManager()
         threeDWidget = layoutManager.threeDWidget(0)
         threeDView = threeDWidget.threeDView()
+        threeDView.lookFromAxis(ctk.ctkAxesWidget.Left)
         threeDView.resetFocalPoint()
+        threeDView.resetCamera(False, False, True)
+        threeDView.lookFromAxis(ctk.ctkAxesWidget.Left)
+
+    def set_segmentation_node_opacity(self, opacity):
+        """Set segmentation node opacity, a float in [0,1], if segmentation node exists.
+        If segmentation node doesn't exist, this simply does nothing."""
+        if self.segmentation_node is not None:
+            self.segmentation_node.GetDisplayNode().SetOpacity3D(opacity)
+
+    def compute_isosurfaces(self, num_isosurface_values: int, progress_callback=None):
+        """Compute isosurfaces of the laplace solution image, if one exists.
+        Raises exception if none exists.
+
+        Args:
+            num_isosurface_values: number of isosurface values
+            progress_callback: Optionally, a function that takes a progress_percentage float value.
+                If this is provided then progress_callback(progress_percentage) will be called by
+                compute_isosurfaces while the computation is being done.
+        """
+        if self.laplace_sol_node is None:
+            raise RuntimeError("Could not find a loaded Laplace solution image")
+        if self.laplace_sol_masked_node is None:
+            raise RuntimeError(
+                "No masked Laplace solution was found; there should be a volume node consisting of"
+                " the Laplace solution restricted to the airway segmentation."
+            )
+
+        isosurface_values = np.linspace(0, 1, num_isosurface_values)
+
+        # this does not work so well at actual min or max value so we leave a bit of room
+        isosurface_values[0] += 0.02
+        isosurface_values[-1] -= 0.02
+
+        laplace_isosurface_node = isosurfaces_from_volume(
+            self.laplace_sol_masked_node,
+            isosurface_values,
+            progress_callback=progress_callback,
+        )
+        laplace_isosurface_node.SetName(
+            f"{self.laplace_sol_node.GetName()}_isosurfaces"
+        )
+        laplace_isosurface_node.CreateDefaultDisplayNodes()
+        laplace_isosurface_node.GetDisplayNode().SetVisibility(True)
+        self.put_node_under_subject(laplace_isosurface_node)
+        self.laplace_isosurface_node = laplace_isosurface_node
+
+    def isosurface_exists(self) -> bool:
+        """Whether isosurface has already been computed"""
+        return (
+            self.laplace_isosurface_node is not None
+            and slicer.mrmlScene.GetNodeByID(self.laplace_isosurface_node.GetID())
+            is not None
+        )
 
 
 #
