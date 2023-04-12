@@ -913,7 +913,7 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
                 while the computation is being done.
         """
         if self.laplace_sol_node is None:
-            raise RuntimeError("No Laplace solution seems to have been loaded.")
+            raise RuntimeError("Could not find a loaded Laplace solution image")
         if self.laplace_sol_masked_node is None:
             raise RuntimeError("No masked Laplace solution was found; there should be a volume node consisting of the Laplace solution restricted to the airway segmentation.")
 
