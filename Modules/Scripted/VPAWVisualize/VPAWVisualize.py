@@ -314,7 +314,7 @@ class VPAWVisualizeWidget(
         self.ui.PatientPrefix.text = self._parameterNode.GetParameter("PatientPrefix")
 
         # Update buttons states and tooltips
-        if os.path.isdir(self.ui.DataDirectory.currentPath):
+        if os.path.isdir(self.ui.DataDirectory.currentPath) and self.ui.PatientPrefix.text != "":
             # Enable show button
             self.ui.showButton.toolTip = (
                 f"Show files from {repr(self.ui.DataDirectory.currentPath)}"
@@ -328,7 +328,7 @@ class VPAWVisualizeWidget(
         else:
             # Disable show button
             self.ui.showButton.toolTip = (
-                "Show is disabled; first select a valid data directory"
+                "Show is disabled; first select a valid data directory and patient prefix."
             )
             self.ui.showButton.enabled = False
 
