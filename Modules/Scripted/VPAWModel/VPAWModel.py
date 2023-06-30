@@ -1,7 +1,10 @@
+import importlib
 import logging
+import pathlib
 import slicer
 import slicer.ScriptedLoadableModule
 import slicer.util
+import sys
 import vtk
 
 
@@ -333,7 +336,6 @@ class VPAWModelWidget(
         with slicer.util.tryWithErrorDisplay(
             "Failed to compute results.", waitCursor=True
         ):
-
             # Compute output
             self.logic.process(
                 self.ui.inputSelector.currentNode(),
@@ -376,6 +378,80 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
         variables.
         """
         slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic.__init__(self)
+        self.dependencies = (
+            ("itk", "itk"),
+            ("monai", "monai"),
+            ("numpy", "numpy"),
+            ("pandas", "pandas"),
+            ("scikit-image", "scikit-image"),
+            ("SimpleITK", "SimpleITK"),
+            ("tensorboard", "tensorboard"),
+            ("torchvision", "torchvision"),
+            ("tqdm", "tqdm"),
+            ("trimesh", "trimesh"),
+            ("vtk", "vtk"),
+            ("yaml", "pyyaml"),
+        )
+
+    def ensureModulePath(self, directory):
+        if directory not in sys.path:
+            sys.path.insert(0, str(pathlib.Path(directory)))
+        return True
+
+    def installAndImportDependencies(self):
+        installed_modules = {}
+        for module_name, pip_install_name in self.dependencies:
+            try:
+                importlib.import_module(module_name)
+            except ModuleNotFoundError as e1:
+                # Module not found.  Install it?
+                wantInstall = slicer.util.confirmYesNoDisplay(
+                    "\n".join(
+                        [
+                            f"Package {module_name} was not found. Install it?",
+                            f"Details of failed import: {e1}",
+                        ]
+                    ),
+                    "Missing Dependency",
+                )
+                if not wantInstall:
+                    mesg = f"Package {module_name} installation declined; giving up."
+                    slicer.util.errorDisplay(mesg, "Install Error")
+                    print(mesg)
+                    return False
+                try:
+                    # Install missing module
+                    with BusyCursor():
+                        slicer.util.pip_install(pip_install_name)
+                    installed_modules[module_name] = importlib.import_module(
+                        module_name
+                    )
+                except ModuleNotFoundError as e2:
+                    slicer.util.errorDisplay(
+                        "\n".join(
+                            [
+                                f"Unable to install package {module_name}.",
+                                "Check the console for details.",
+                            ]
+                        ),
+                        "Install Error",
+                    )
+                    print(e2)
+                    return False
+        # All dependencies were successfully imported
+        if installed_modules:
+            version_text = "\n".join(
+                [
+                    f"    {module_name} version: {module.__version__}"
+                    if hasattr(module, "__version__")
+                    else f"    {module_name} version: unknown"
+                    for module_name, module in installed_modules.items()
+                ]
+            )
+            slicer.util.infoDisplay(
+                "Modules installed:\n" + version_text, "Modules Installed"
+            )
+        return True
 
     def setDefaultParameters(self, parameterNode):
         """
