@@ -45,7 +45,10 @@ def summary_repr(contents):
             + "}"
         )
     elif isinstance(contents, set):
-        return "{" + ", ".join([summary_repr(elem) for elem in contents]) + "}"
+        if len(contents) == 0:
+            return repr(set())
+        else:
+            return "{" + ", ".join([summary_repr(elem) for elem in contents]) + "}"
     elif isinstance(contents, (int, float, np.float32, np.float64, bool, str)):
         return repr(contents)
     elif isinstance(contents, np.ndarray):
@@ -893,7 +896,8 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
 
     def restrict_laplace_sol_to_segmentation(self):
         """If the laplace solution and the segmentation node both exist, mask the laplace solution
-        volume by the segmentation node. If either of them doesn't exists, raise an exception."""
+        volume by the segmentation node. If either of them doesn't exists, raise an exception.
+        """
 
         if self.segmentation_node is None:
             raise RuntimeError("Could not find segmentation node.")
