@@ -378,7 +378,7 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
         variables.
         """
         slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic.__init__(self)
-        self.dependencies = (
+        self.python_dependencies = (
             ("itk", "itk"),
             ("monai", "monai"),
             ("numpy", "numpy"),
@@ -399,45 +399,49 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
         return True
 
     def installAndImportDependencies(self):
-        installed_modules = {}
-        for module_name, pip_install_name in self.dependencies:
+        needs_installation = []
+        for module_name, pip_install_name in self.python_dependencies:
             try:
                 importlib.import_module(module_name)
             except ModuleNotFoundError as e1:
-                # Module not found.  Install it?
-                wantInstall = slicer.util.confirmYesNoDisplay(
+                needs_installation.append((module_name, pip_install_name))
+        installed_modules = {}
+        if needs_installation:
+            plural = "" if len(needs_installation) == 1 else "s"
+            want_install = slicer.util.confirmYesNoDisplay(
+                f"Package{plural} not found: "
+                + ", ".join([module_name for module_name, _ in needs_installation])
+                + f"\nInstall the package{plural}?"
+                "Missing Dependency"
+            )
+            if not want_install:
+                mesg = f"Package{plural} installation declined; giving up."
+                slicer.util.errorDisplay(mesg, "Install Error")
+                print(mesg)
+                return False
+            try:
+                # Install missing packages
+                with BusyCursor():
+                    slicer.util.pip_install(
+                        [pip_install_name for _, pip_install_name in needs_installation]
+                    )
+                    installed_modules = {
+                        module_name: importlib.import_module(module_name)
+                        for module_name, _ in needs_installation
+                    }
+            except ModuleNotFoundError as e2:
+                slicer.util.errorDisplay(
                     "\n".join(
                         [
-                            f"Package {module_name} was not found. Install it?",
-                            f"Details of failed import: {e1}",
+                            f"Unable to install package{plural}.",
+                            "Check the console for details.",
                         ]
                     ),
-                    "Missing Dependency",
+                    "Install Error",
                 )
-                if not wantInstall:
-                    mesg = f"Package {module_name} installation declined; giving up."
-                    slicer.util.errorDisplay(mesg, "Install Error")
-                    print(mesg)
-                    return False
-                try:
-                    # Install missing module
-                    with BusyCursor():
-                        slicer.util.pip_install(pip_install_name)
-                    installed_modules[module_name] = importlib.import_module(
-                        module_name
-                    )
-                except ModuleNotFoundError as e2:
-                    slicer.util.errorDisplay(
-                        "\n".join(
-                            [
-                                f"Unable to install package {module_name}.",
-                                "Check the console for details.",
-                            ]
-                        ),
-                        "Install Error",
-                    )
-                    print(e2)
-                    return False
+                print(e2)
+                return False
+
         # All dependencies were successfully imported
         if installed_modules:
             version_text = "\n".join(
@@ -450,6 +454,10 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
             )
             slicer.util.infoDisplay(
                 "Modules installed:\n" + version_text, "Modules Installed"
+            )
+        else:
+            slicer.util.infoDisplay(
+                "All modules already installed", "Modules Installed"
             )
         return True
 
