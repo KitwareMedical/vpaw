@@ -20,6 +20,7 @@ def isosurfaces_from_volume(
     """
 
     if progress_callback is None:
+
         def progress_callback(progress_percentage):
             pass
 
