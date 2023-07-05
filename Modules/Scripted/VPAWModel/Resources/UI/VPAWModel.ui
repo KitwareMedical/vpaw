@@ -38,6 +38,45 @@
     </widget>
    </item>
    <item>
+    <widget class="ctkCollapsibleButton" name="installPediatricAirwayAtlasCollapsibleButton" native="true">
+     <property name="text" stdset="0">
+      <string>VPAW Model: Install Pediatric Airway Atlas</string>
+     </property>
+     <property name="collapsed" stdset="0">
+      <bool>false</bool>
+     </property>
+     <layout class="QFormLayout" name="installPediatricAirwayAtlasFormLayout">
+      <item row="0" column="0">
+       <widget class="QLabel" name="pediatricAirwayAtlasDirectoryLabel">
+        <property name="text">
+         <string>Pediatric Airway Atlas source directory</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="ctkPathLineEdit" name="PediatricAirwayAtlasDirectory">
+        <property name="filters">
+         <set>ctkPathLineEdit::Dirs</set>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0" colspan="2">
+       <widget class="QPushButton" name="installPediatricAirwayAtlasButton">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="toolTip">
+         <string>Install Pediatric Airway Atlas and Dependencies</string>
+        </property>
+        <property name="text">
+         <string>Install Pediatric Airway Atlas and Dependencies</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
     <widget class="ctkCollapsibleButton" name="inputsCollapsibleButton">
      <property name="text">
       <string>VPAW Model: Inputs</string>
