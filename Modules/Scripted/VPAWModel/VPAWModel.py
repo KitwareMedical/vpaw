@@ -416,20 +416,32 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
         # entry is a name that is used with Python `import`.  The second is a name that
         # is used with Python `pip install`, and can include version information.
         self.python_dependencies = (
+            ("colour", "colour"),
+            ("cv2", "opencv-python"),
             ("itk", "itk"),
             ("matplotlib", "matplotlib"),
             ("monai", "monai"),
+            ("mplcursors", "mplcursors"),
+            ("nrrd", "pynrrd"),
             ("numpy", "numpy"),
             ("pandas", "pandas"),
+            ("pydicom", "pydicom"),
+            ("pyransac3d", "pyransac3d"),
+            ("pyrender", "pyrender"),
+            ("pytorch_lightning", "pytorch_lightning"),
+            ("rtree", "rtree"),
             ("ruffus", "ruffus"),
             ("shapely", "shapely"),
             ("SimpleITK", "SimpleITK"),
             ("skimage", "scikit-image"),
+            ("sklearn", "scikit-learn"),
+            ("skspatial", "scikit-spatial"),
             ("tensorboard", "tensorboard"),
             ("torchvision", "torchvision"),
             ("tqdm", "tqdm"),
             ("trimesh", "trimesh"),
             ("vtk", "vtk"),
+            ("xlrd", "xlrd"),
             ("yaml", "pyyaml"),
         )
 
@@ -450,15 +462,12 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
         )
 
     def ensureModulePath(self, directory):
-        directory = str(pathlib.Path(directory))
-        if directory not in sys.path:
-            sys.path.insert(0, directory)
+        self.pediatric_airway_atlas_directory = str(pathlib.Path(directory))
+        if self.pediatric_airway_atlas_directory not in sys.path:
+            sys.path.insert(0, self.pediatric_airway_atlas_directory)
             importlib.invalidate_caches()
         try:
-            for module_name in (
-                "conversion_utils.generate_pixel_space_landmarks",
-                "atlas_builder_configurable",
-            ):
+            for module_name in ("conversion_utils.generate_pixel_space_landmarks",):
                 imported = importlib.import_module(module_name)
         except:
             slicer.util.errorDisplay(
@@ -474,14 +483,14 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
             plural = "" if len(installed_modules) == 1 else "s"
             version_text = "\n".join(
                 [
-                    f"    {module_name} version: {module.__version__}"
+                    f"    {pip_install_name} version: {module.__version__}"
                     if hasattr(module, "__version__")
-                    else f"    {module_name} version: unknown"
-                    for module_name, module in installed_modules.items()
+                    else f"    {pip_install_name} version: unknown"
+                    for module_name, pip_install_name, module in installed_modules
                 ]
             )
             slicer.util.infoDisplay(
-                "Module{plural} installed:\n" + version_text,
+                f"Module{plural} installed:\n" + version_text,
                 f"Module{plural} Installed",
             )
 
@@ -492,14 +501,14 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
                 importlib.import_module(module_name)
             except ModuleNotFoundError as e1:
                 needs_installation.append((module_name, pip_install_name))
-        installed_modules = {}
+        installed_modules = []
         if needs_installation:
             plural = "" if len(needs_installation) == 1 else "s"
             want_install = slicer.util.confirmYesNoDisplay(
                 f"Package{plural} not found: "
                 + ", ".join([module_name for module_name, _ in needs_installation])
                 + f"\nInstall the package{plural}?  (This may take a while)",
-                "Missing Dependencies" if plural == "s" else "Missing Dependency"
+                "Missing Dependencies" if plural == "s" else "Missing Dependency",
             )
             if not want_install:
                 mesg = f"Package{plural} installation declined; giving up."
@@ -513,10 +522,14 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
                     slicer.util.pip_install(
                         [pip_install_name for _, pip_install_name in needs_installation]
                     )
-                    installed_modules = {
-                        module_name: importlib.import_module(module_name)
-                        for module_name, _ in needs_installation
-                    }
+                    installed_modules = [
+                        (
+                            module_name,
+                            pip_install_name,
+                            importlib.import_module(module_name),
+                        )
+                        for module_name, pip_install_name in needs_installation
+                    ]
             except ModuleNotFoundError as e2:
                 slicer.util.errorDisplay(
                     "\n".join(
@@ -579,11 +592,16 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
         )
 
     def runSegmentation(self, pAAConfigFile, pAASegmentationConfigFile):
-        import atlas_builder_configurable
-
-        atlas_builder_configurable.atlas_builder_configurable(
-            pAAConfigFile, pAASegmentationConfigFile
+        cwd = os.getcwd()
+        os.chdir(self.pediatric_airway_atlas_directory)
+        slicer.util._executePythonModule(
+            "atlas_builder_configurable",
+            [
+                f"--config={pAAConfigFile}",
+                f"--segmentation_config={pAASegmentationConfigFile}",
+            ],
         )
+        os.chdir(cwd)
 
 
 #
