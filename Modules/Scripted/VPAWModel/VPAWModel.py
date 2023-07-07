@@ -1,11 +1,25 @@
 import importlib
 import logging
+import os
 import pathlib
+import qt
 import slicer
 import slicer.ScriptedLoadableModule
 import slicer.util
 import sys
+import time
 import vtk
+
+
+class BusyCursor:
+    """Context manager for showing a busy cursor. Ensures that cursor reverts to normal in case of an exception."""
+
+    def __enter__(self):
+        qt.QApplication.setOverrideCursor(qt.Qt.BusyCursor)
+
+    def __exit__(self, exception_type, exception_value, traceback):
+        qt.QApplication.restoreOverrideCursor()
+        return False
 
 
 #
@@ -44,7 +58,6 @@ This file was built from template originally developed by Jean-Christophe Fillio
 Kitware Inc., Andras Lasso, PerkLab, and Steve Pieper, Isomics, Inc. and was partially
 funded by NIH grant 3P41RR013218-12S1.
 """
-
         # Additional initialization step after application startup is complete
         slicer.app.connect("startupCompleted()", registerSampleData)
 
@@ -110,6 +123,16 @@ class VPAWModelWidget(
         # MRML widget's.  "setMRMLScene(vtkMRMLScene*)" slot.
         uiWidget.setMRMLScene(slicer.mrmlScene)
 
+        # Configure 3D view
+        viewNode = slicer.app.layoutManager().threeDWidget(0).mrmlViewNode()
+        viewNode.SetBackgroundColor(0, 0, 0)
+        viewNode.SetBackgroundColor2(0, 0, 0)
+        viewNode.SetAxisLabelsVisible(False)
+        viewNode.SetBoxVisible(False)
+        viewNode.SetOrientationMarkerType(
+            slicer.vtkMRMLAbstractViewNode.OrientationMarkerTypeAxes
+        )
+
         # Create logic class. Logic implements all computations that should be possible
         # to run in batch mode, without a graphical user interface.
         self.logic = VPAWModelLogic()
@@ -126,26 +149,28 @@ class VPAWModelWidget(
 
         # These connections ensure that whenever user changes some settings on the GUI,
         # that is saved in the MRML scene (in the selected parameter node).
-        self.ui.inputSelector.connect(
-            "currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI
+        self.ui.PediatricAirwayAtlasDirectory.connect(
+            "currentPathChanged(const QString&)", self.updateParameterNodeFromGUI
         )
-        self.ui.outputSelector.connect(
-            "currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI
+        self.ui.VPAWRootDirectory.connect(
+            "currentPathChanged(const QString&)", self.updateParameterNodeFromGUI
         )
-        self.ui.imageThresholdSliderWidget.connect(
-            "valueChanged(double)", self.updateParameterNodeFromGUI
+        self.ui.PAAConfigFile.connect(
+            "currentPathChanged(const QString&)", self.updateParameterNodeFromGUI
         )
-        self.ui.invertOutputCheckBox.connect(
-            "toggled(bool)", self.updateParameterNodeFromGUI
-        )
-        self.ui.invertedOutputSelector.connect(
-            "currentNodeChanged(vtkMRMLNode*)", self.updateParameterNodeFromGUI
+        self.ui.PAASegmentationConfigFile.connect(
+            "currentPathChanged(const QString&)", self.updateParameterNodeFromGUI
         )
 
         # Buttons
-        self.ui.HomeButton.connect("clicked(bool)", self.onHomeButton)
         self.ui.VPAWVisualizeButton.connect("clicked(bool)", self.onVPAWVisualizeButton)
-        self.ui.applyButton.connect("clicked(bool)", self.onApplyButton)
+        self.ui.HomeButton.connect("clicked(bool)", self.onHomeButton)
+        self.ui.installPediatricAirwayAtlasButton.connect(
+            "clicked(bool)", self.onInstallPediatricAirwayAtlasButton
+        )
+        self.ui.runPediatricAirwayAtlasButton.connect(
+            "clicked(bool)", self.onRunPediatricAirwayAtlasButton
+        )
 
         # Make sure parameter node is initialized (needed for module reload)
         self.initializeParameterNode()
@@ -201,23 +226,11 @@ class VPAWModelWidget(
 
         self.setParameterNode(self.logic.getParameterNode())
 
-        # Select default input nodes if nothing is selected yet to save a few clicks for
-        # the user
-        if not self._parameterNode.GetNodeReference("InputVolume"):
-            firstVolumeNode = slicer.mrmlScene.GetFirstNodeByClass(
-                "vtkMRMLScalarVolumeNode"
-            )
-            if firstVolumeNode:
-                self._parameterNode.SetNodeReferenceID(
-                    "InputVolume", firstVolumeNode.GetID()
-                )
-
     def setParameterNode(self, inputParameterNode):
         """
         Set and observe parameter node.  Observation is needed because when the
         parameter node is changed then the GUI must be updated immediately.
         """
-
         if inputParameterNode:
             self.logic.setDefaultParameters(inputParameterNode)
 
@@ -225,7 +238,11 @@ class VPAWModelWidget(
         # selected.  Changes of parameter node are observed so that whenever parameters
         # are changed by a script or any other module those are reflected immediately in
         # the GUI.
-        if self._parameterNode is not None:
+        if self._parameterNode is not None and self.hasObserver(
+            self._parameterNode,
+            vtk.vtkCommand.ModifiedEvent,
+            self.updateGUIFromParameterNode,
+        ):
             self.removeObserver(
                 self._parameterNode,
                 vtk.vtkCommand.ModifiedEvent,
@@ -244,10 +261,9 @@ class VPAWModelWidget(
 
     def updateGUIFromParameterNode(self, caller=None, event=None):
         """
-        This method is called whenever parameter node is changed.
-        The module GUI is updated to show the current state of the parameter node.
+        This method is called whenever parameter node is changed.  The module GUI is
+        updated to show the current state of the parameter node.
         """
-
         if self._parameterNode is None or self._updatingGUIFromParameterNode:
             return
 
@@ -256,31 +272,44 @@ class VPAWModelWidget(
         self._updatingGUIFromParameterNode = True
 
         # Update node selectors and sliders
-        self.ui.inputSelector.setCurrentNode(
-            self._parameterNode.GetNodeReference("InputVolume")
+        self.ui.PediatricAirwayAtlasDirectory.currentPath = (
+            self._parameterNode.GetParameter("PediatricAirwayAtlasDirectory")
         )
-        self.ui.outputSelector.setCurrentNode(
-            self._parameterNode.GetNodeReference("OutputVolume")
+        self.ui.VPAWRootDirectory.currentPath = self._parameterNode.GetParameter(
+            "VPAWRootDirectory"
         )
-        self.ui.invertedOutputSelector.setCurrentNode(
-            self._parameterNode.GetNodeReference("OutputVolumeInverse")
+        self.ui.PAAConfigFile.currentPath = self._parameterNode.GetParameter(
+            "PAAConfigFile"
         )
-        self.ui.imageThresholdSliderWidget.value = float(
-            self._parameterNode.GetParameter("Threshold")
-        )
-        self.ui.invertOutputCheckBox.checked = (
-            self._parameterNode.GetParameter("Invert") == "true"
+        self.ui.PAASegmentationConfigFile.currentPath = (
+            self._parameterNode.GetParameter("PAASegmentationConfigFile")
         )
 
         # Update buttons states and tooltips
-        if self._parameterNode.GetNodeReference(
-            "InputVolume"
-        ) and self._parameterNode.GetNodeReference("OutputVolume"):
-            self.ui.applyButton.toolTip = "Compute output volume"
-            self.ui.applyButton.enabled = True
+        if os.path.isdir(self.ui.PediatricAirwayAtlasDirectory.currentPath):
+            self.ui.installPediatricAirwayAtlasButton.toolTip = (
+                "Install Pediatric Airway Atlas and Dependencies"
+            )
+            self.ui.installPediatricAirwayAtlasButton.enabled = True
         else:
-            self.ui.applyButton.toolTip = "Select input and output volume nodes"
-            self.ui.applyButton.enabled = False
+            self.ui.installPediatricAirwayAtlasButton.toolTip = (
+                "Install is disabled;"
+                + " first select a valid source code directory for the Pediatric Airway Atlas"
+            )
+            self.ui.installPediatricAirwayAtlasButton.enabled = True
+        if (
+            os.path.isdir(self.ui.VPAWRootDirectory.currentPath)
+            and os.path.isfile(self.ui.PAAConfigFile.currentPath)
+            and os.path.isfile(self.ui.PAASegmentationConfigFile.currentPath)
+        ):
+            self.ui.runPediatricAirwayAtlasButton.toolTip = "Run Pediatric Airway Atlas"
+            self.ui.runPediatricAirwayAtlasButton.enabled = True
+        else:
+            self.ui.runPediatricAirwayAtlasButton.toolTip = (
+                "Run is disabled;"
+                + " first select input/output root directory and both configuration files"
+            )
+            self.ui.runPediatricAirwayAtlasButton.enabled = False
 
         # All the GUI updates are done
         self._updatingGUIFromParameterNode = False
@@ -291,7 +320,6 @@ class VPAWModelWidget(
         are saved into the parameter node (so that they are restored when the scene is
         saved and loaded).
         """
-
         if self._parameterNode is None or self._updatingGUIFromParameterNode:
             return
 
@@ -299,20 +327,18 @@ class VPAWModelWidget(
             self._parameterNode.StartModify()
         )  # Modify all properties in a single batch
 
-        self._parameterNode.SetNodeReferenceID(
-            "InputVolume", self.ui.inputSelector.currentNodeID
-        )
-        self._parameterNode.SetNodeReferenceID(
-            "OutputVolume", self.ui.outputSelector.currentNodeID
+        self._parameterNode.SetParameter(
+            "PediatricAirwayAtlasDirectory",
+            self.ui.PediatricAirwayAtlasDirectory.currentPath,
         )
         self._parameterNode.SetParameter(
-            "Threshold", str(self.ui.imageThresholdSliderWidget.value)
+            "VPAWRootDirectory", self.ui.VPAWRootDirectory.currentPath
         )
         self._parameterNode.SetParameter(
-            "Invert", "true" if self.ui.invertOutputCheckBox.checked else "false"
+            "PAAConfigFile", self.ui.PAAConfigFile.currentPath
         )
-        self._parameterNode.SetNodeReferenceID(
-            "OutputVolumeInverse", self.ui.invertedOutputSelector.currentNodeID
+        self._parameterNode.SetParameter(
+            "PAASegmentationConfigFile", self.ui.PAASegmentationConfigFile.currentPath
         )
 
         self._parameterNode.EndModify(wasModified)
@@ -329,32 +355,38 @@ class VPAWModelWidget(
         """
         slicer.util.selectModule("VPAWVisualize")
 
-    def onApplyButton(self):
+    def onInstallPediatricAirwayAtlasButton(self):
         """
-        Run processing when user clicks "Apply" button.
+        Install the Pediatric Airway Atlas source code and its dependencies at the
+        user's request.
         """
         with slicer.util.tryWithErrorDisplay(
             "Failed to compute results.", waitCursor=True
         ):
-            # Compute output
-            self.logic.process(
-                self.ui.inputSelector.currentNode(),
-                self.ui.outputSelector.currentNode(),
-                self.ui.imageThresholdSliderWidget.value,
-                self.ui.invertOutputCheckBox.checked,
+            self.logic.installPediatricAirwayAtlas(
+                self.ui.PediatricAirwayAtlasDirectory.currentPath
             )
 
-            # Compute inverted output (if needed)
-            if self.ui.invertedOutputSelector.currentNode():
-                # If additional output volume is selected then result with inverted
-                # threshold is written there
-                self.logic.process(
-                    self.ui.inputSelector.currentNode(),
-                    self.ui.invertedOutputSelector.currentNode(),
-                    self.ui.imageThresholdSliderWidget.value,
-                    not self.ui.invertOutputCheckBox.checked,
-                    showResult=False,
-                )
+    def onRunPediatricAirwayAtlasButton(self):
+        """
+        Using the supplied
+            VPAWRootDirectory :
+                input/output directory (e.g., "path/to/vpaw-data-root"),
+            PAAConfigFile :
+                config file (e.g., "configs/config_large_dataset_large_train.yaml")
+            PAASegmentationConfigFile :
+                segmentation config file (e.g.,
+                "segmentation/segmentation_settings_largetrain_step_2.yaml")
+        run the Pediatric Airway Atlas pipeline at the user's request.
+        """
+        with slicer.util.tryWithErrorDisplay(
+            "Failed to compute results.", waitCursor=True
+        ):
+            self.logic.runPediatricAirwayAtlas(
+                self.ui.VPAWRootDirectory.currentPath,
+                self.ui.PAAConfigFile.currentPath,
+                self.ui.PAASegmentationConfigFile.currentPath,
+            )
 
 
 #
@@ -378,13 +410,21 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
         variables.
         """
         slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic.__init__(self)
+        # self.python_dependencies should instead be handled as something like a
+        # requirements.txt file for pediatric_airway_atlas.  Because it isn't,
+        # self.python_dependencies is a sequence of pairs.  For each pair the first
+        # entry is a name that is used with Python `import`.  The second is a name that
+        # is used with Python `pip install`, and can include version information.
         self.python_dependencies = (
             ("itk", "itk"),
+            ("matplotlib", "matplotlib"),
             ("monai", "monai"),
             ("numpy", "numpy"),
             ("pandas", "pandas"),
-            ("scikit-image", "scikit-image"),
+            ("ruffus", "ruffus"),
+            ("shapely", "shapely"),
             ("SimpleITK", "SimpleITK"),
+            ("skimage", "scikit-image"),
             ("tensorboard", "tensorboard"),
             ("torchvision", "torchvision"),
             ("tqdm", "tqdm"),
@@ -393,10 +433,57 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
             ("yaml", "pyyaml"),
         )
 
+    def installPediatricAirwayAtlas(self, pediatricAirwayAtlasDirectory):
+        startTime = time.time()
+        logging.info("Pediatric Airway Atlas installation started")
+
+        if self.installAndImportDependencies() and self.ensureModulePath(
+            pediatricAirwayAtlasDirectory
+        ):
+            # No error messages have been sent to the user, so let's be friendly
+            slicer.util.infoDisplay("Pediatric Airway Atlas is installed", "Installed")
+
+        stopTime = time.time()
+        logging.info(
+            "Pediatric Airway Atlas installation completed"
+            + f" in {stopTime-startTime:.2f} seconds"
+        )
+
     def ensureModulePath(self, directory):
+        directory = str(pathlib.Path(directory))
         if directory not in sys.path:
-            sys.path.insert(0, str(pathlib.Path(directory)))
+            sys.path.insert(0, directory)
+            importlib.invalidate_caches()
+        try:
+            for module_name in (
+                "conversion_utils.generate_pixel_space_landmarks",
+                "atlas_builder_configurable",
+            ):
+                imported = importlib.import_module(module_name)
+        except:
+            slicer.util.errorDisplay(
+                f"Unable to find pediatric_airway_atlas/{module_name}\n"
+                + "Check the console for details.",
+                "Install Error",
+            )
+            return False
         return True
+
+    def showInstalledModules(self, installed_modules):
+        if installed_modules:
+            plural = "" if len(installed_modules) == 1 else "s"
+            version_text = "\n".join(
+                [
+                    f"    {module_name} version: {module.__version__}"
+                    if hasattr(module, "__version__")
+                    else f"    {module_name} version: unknown"
+                    for module_name, module in installed_modules.items()
+                ]
+            )
+            slicer.util.infoDisplay(
+                "Module{plural} installed:\n" + version_text,
+                f"Module{plural} Installed",
+            )
 
     def installAndImportDependencies(self):
         needs_installation = []
@@ -411,8 +498,8 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
             want_install = slicer.util.confirmYesNoDisplay(
                 f"Package{plural} not found: "
                 + ", ".join([module_name for module_name, _ in needs_installation])
-                + f"\nInstall the package{plural}?"
-                "Missing Dependency"
+                + f"\nInstall the package{plural}?  (This may take a while)",
+                "Missing Dependencies" if plural == "s" else "Missing Dependency"
             )
             if not want_install:
                 mesg = f"Package{plural} installation declined; giving up."
@@ -422,6 +509,7 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
             try:
                 # Install missing packages
                 with BusyCursor():
+                    slicer.util.pip_install(["-U", "pip", "setuptools", "wheel"])
                     slicer.util.pip_install(
                         [pip_install_name for _, pip_install_name in needs_installation]
                     )
@@ -443,76 +531,59 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
                 return False
 
         # All dependencies were successfully imported
-        if installed_modules:
-            version_text = "\n".join(
-                [
-                    f"    {module_name} version: {module.__version__}"
-                    if hasattr(module, "__version__")
-                    else f"    {module_name} version: unknown"
-                    for module_name, module in installed_modules.items()
-                ]
-            )
-            slicer.util.infoDisplay(
-                "Modules installed:\n" + version_text, "Modules Installed"
-            )
-        else:
-            slicer.util.infoDisplay(
-                "All modules already installed", "Modules Installed"
-            )
+        self.showInstalledModules(installed_modules)
         return True
 
     def setDefaultParameters(self, parameterNode):
         """
         Initialize parameter node with default settings.
         """
-        if not parameterNode.GetParameter("Threshold"):
-            parameterNode.SetParameter("Threshold", "100.0")
-        if not parameterNode.GetParameter("Invert"):
-            parameterNode.SetParameter("Invert", "false")
+        pass
 
-    def process(
-        self, inputVolume, outputVolume, imageThreshold, invert=False, showResult=True
+    def runPediatricAirwayAtlas(
+        self, vPAWRootDirectory, pAAConfigFile, pAASegmentationConfigFile
     ):
         """
-        Run the processing algorithm.
+        Run the Pediatric Airway Atlas pipeline.
         Can be used without GUI widget.
-        :param inputVolume: volume to be thresholded
-        :param outputVolume: thresholding result
-        :param imageThreshold: values above/below this threshold will be set to 0
-        :param invert: if True then values above the threshold will be set to 0,
-               otherwise values below are set to 0
-        :param showResult: show output volume in slice viewers
+
+        Parameters
+        ----------
+        vPAWRootDirectory : str
+            input/output directory (e.g., "path/to/vpaw-data-root"),
+        pAAConfigFile : str
+            config file (e.g., "configs/config_large_dataset_large_train.yaml")
+        pAASegmentationConfigFile : str
+            segmentation config file (e.g.,
+            "segmentation/segmentation_settings_largetrain_step_2.yaml")
         """
-
-        if not inputVolume or not outputVolume:
-            raise ValueError("Input or output volume is invalid")
-
-        import time
-
         startTime = time.time()
-        logging.info("Processing started")
+        logging.info("Pediatric Airway Atlas pipeline started")
 
-        # Compute the thresholded output volume using the "Threshold Scalar Volume" CLI
-        # module
-        cliParams = {
-            "InputVolume": inputVolume.GetID(),
-            "OutputVolume": outputVolume.GetID(),
-            "ThresholdValue": imageThreshold,
-            "ThresholdType": "Above" if invert else "Below",
-        }
-        cliNode = slicer.cli.run(
-            slicer.modules.thresholdscalarvolume,
-            None,
-            cliParams,
-            wait_for_completion=True,
-            update_display=showResult,
-        )
-        # We don't need the CLI module node anymore, remove it to not clutter the scene
-        # with it
-        slicer.mrmlScene.RemoveNode(cliNode)
+        # self.convertCTScansToNRRD(vPAWRootDirectory)
+        self.convertFCSVLandmarksToP3(vPAWRootDirectory)
+        self.runSegmentation(pAAConfigFile, pAASegmentationConfigFile)
 
         stopTime = time.time()
-        logging.info(f"Processing completed in {stopTime-startTime:.2f} seconds")
+        logging.info(
+            f"Pediatric Airway Atlas pipeline completed in {stopTime-startTime:.2f} seconds"
+        )
+
+    def convertFCSVLandmarksToP3(self, vPAWRootDirectory):
+        import conversion_utils.generate_pixel_space_landmarks
+
+        conversion_utils.generate_pixel_space_landmarks.convert_landmarks(
+            os.path.join(vPAWRootDirectory, "images"),
+            os.path.join(vPAWRootDirectory, "landmarks"),
+            os.path.join(vPAWRootDirectory, "transformed_landmarks"),
+        )
+
+    def runSegmentation(self, pAAConfigFile, pAASegmentationConfigFile):
+        import atlas_builder_configurable
+
+        atlas_builder_configurable.atlas_builder_configurable(
+            pAAConfigFile, pAASegmentationConfigFile
+        )
 
 
 #
@@ -538,17 +609,17 @@ class VPAWModelTest(slicer.ScriptedLoadableModule.ScriptedLoadableModuleTest):
         self.test_VPAWModel1()
 
     def test_VPAWModel1(self):
-        """Ideally you should have several levels of tests.  At the lowest level
-        tests should exercise the functionality of the logic with different inputs
-        (both valid and invalid).  At higher levels your tests should emulate the
-        way the user would interact with your code and confirm that it still works
-        the way you intended.
-        One of the most important features of the tests is that it should alert other
-        developers when their changes will have an impact on the behavior of your
-        module.  For example, if a developer removes a feature that you depend on,
-        your test should break so they know that the feature is needed.
         """
+        Ideally we should have several levels of tests.  At the lowest level tests
+        should exercise the functionality of the logic with different inputs (both valid
+        and invalid).  At higher levels our tests should emulate the way the user would
+        interact with our code and confirm that it still works the way we intended.
 
+        One of the most important features of the tests is that it should alert other
+        developers when their changes will have an impact on the behavior of our module.
+        For example, if a developer removes a feature that we depend on, our test should
+        break so they know that the feature is needed.
+        """
         self.delayDisplay("Starting the test")
 
         # Get/create input data
