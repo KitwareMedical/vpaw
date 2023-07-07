@@ -280,7 +280,11 @@ class VPAWVisualizeWidget(
         # selected.  Changes of parameter node are observed so that whenever parameters
         # are changed by a script or any other module those are reflected immediately in
         # the GUI.
-        if self._parameterNode is not None:
+        if self._parameterNode is not None and self.hasObserver(
+            self._parameterNode,
+            vtk.vtkCommand.ModifiedEvent,
+            self.updateGUIFromParameterNode,
+        ):
             self.removeObserver(
                 self._parameterNode,
                 vtk.vtkCommand.ModifiedEvent,
