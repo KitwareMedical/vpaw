@@ -97,40 +97,20 @@
        </widget>
       </item>
       <item row="1" column="0">
-       <widget class="QLabel" name="PAAConfigFileLabel">
+       <widget class="QLabel" name="VPAWModelsDirectoryLabel">
         <property name="text">
-         <string>Configuration file (*.yaml)</string>
+         <string>Models Directory</string>
         </property>
        </widget>
       </item>
       <item row="1" column="1">
-       <widget class="ctkPathLineEdit" name="PAAConfigFile">
+       <widget class="ctkPathLineEdit" name="VPAWModelsDirectory">
         <property name="filters">
-         <set>ctkPathLineEdit::Files</set>
-        </property>
-        <property name="nameFilters">
-         <string>*.yaml</string>
+         <set>ctkPathLineEdit::Dirs</set>
         </property>
        </widget>
       </item>
-      <item row="2" column="0">
-       <widget class="QLabel" name="PAASegmentationConfigFileLabel">
-        <property name="text">
-         <string>Segmentation Configuration file (*.yaml)</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="1">
-       <widget class="ctkPathLineEdit" name="PAASegmentationConfigFile">
-        <property name="filters">
-         <set>ctkPathLineEdit::Files</set>
-        </property>
-        <property name="nameFilters">
-         <string>*.yaml</string>
-        </property>
-       </widget>
-      </item>
-      <item row="3" column="0" colspan="2">
+      <item row="2" column="0" colspan="2">
        <widget class="QPushButton" name="runPediatricAirwayAtlasButton">
         <property name="enabled">
          <bool>false</bool>

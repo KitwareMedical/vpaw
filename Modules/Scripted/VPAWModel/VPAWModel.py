@@ -7,12 +7,16 @@ import slicer
 import slicer.ScriptedLoadableModule
 import slicer.util
 import sys
+import tempfile
 import time
 import vtk
 
 
 class BusyCursor:
-    """Context manager for showing a busy cursor. Ensures that cursor reverts to normal in case of an exception."""
+    """
+    Context manager for showing a busy cursor. Ensures that cursor reverts to normal in
+    case of an exception.
+    """
 
     def __enter__(self):
         qt.QApplication.setOverrideCursor(qt.Qt.BusyCursor)
@@ -155,10 +159,7 @@ class VPAWModelWidget(
         self.ui.VPAWRootDirectory.connect(
             "currentPathChanged(const QString&)", self.updateParameterNodeFromGUI
         )
-        self.ui.PAAConfigFile.connect(
-            "currentPathChanged(const QString&)", self.updateParameterNodeFromGUI
-        )
-        self.ui.PAASegmentationConfigFile.connect(
+        self.ui.VPAWModelsDirectory.connect(
             "currentPathChanged(const QString&)", self.updateParameterNodeFromGUI
         )
 
@@ -278,14 +279,12 @@ class VPAWModelWidget(
         self.ui.VPAWRootDirectory.currentPath = self._parameterNode.GetParameter(
             "VPAWRootDirectory"
         )
-        self.ui.PAAConfigFile.currentPath = self._parameterNode.GetParameter(
-            "PAAConfigFile"
-        )
-        self.ui.PAASegmentationConfigFile.currentPath = (
-            self._parameterNode.GetParameter("PAASegmentationConfigFile")
+        self.ui.VPAWModelsDirectory.currentPath = self._parameterNode.GetParameter(
+            "VPAWModelsDirectory"
         )
 
         # Update buttons states and tooltips
+        self.ui.PediatricAirwayAtlasDirectory.toolTip = "Root directory for source code"
         if os.path.isdir(self.ui.PediatricAirwayAtlasDirectory.currentPath):
             self.ui.installPediatricAirwayAtlasButton.toolTip = (
                 "Install Pediatric Airway Atlas and Dependencies"
@@ -293,21 +292,29 @@ class VPAWModelWidget(
             self.ui.installPediatricAirwayAtlasButton.enabled = True
         else:
             self.ui.installPediatricAirwayAtlasButton.toolTip = (
-                "Install is disabled;"
-                + " first select a valid source code directory for the Pediatric Airway Atlas"
+                "Install is disabled; first select a valid source code directory for"
+                + " the Pediatric Airway Atlas"
             )
-            self.ui.installPediatricAirwayAtlasButton.enabled = True
-        if (
-            os.path.isdir(self.ui.VPAWRootDirectory.currentPath)
-            and os.path.isfile(self.ui.PAAConfigFile.currentPath)
-            and os.path.isfile(self.ui.PAASegmentationConfigFile.currentPath)
+            self.ui.installPediatricAirwayAtlasButton.enabled = False
+
+        self.ui.VPAWRootDirectory.toolTip = (
+            "Directory containing FilteredControlBlindingLogUniqueScanFiltered.xls,"
+            + " images/*, and landmarks/*."
+        )
+        self.ui.VPAWModelsDirectory.toolTip = (
+            "Directory containing file named like '116(158.10-38.AM.24.Mar).pth'"
+        )
+        if os.path.isdir(self.ui.VPAWRootDirectory.currentPath) and os.path.isdir(
+            self.ui.VPAWModelsDirectory.currentPath
         ):
-            self.ui.runPediatricAirwayAtlasButton.toolTip = "Run Pediatric Airway Atlas"
+            self.ui.runPediatricAirwayAtlasButton.toolTip = (
+                "Run Pediatric Airway Atlas (This may take many hours)"
+            )
             self.ui.runPediatricAirwayAtlasButton.enabled = True
         else:
             self.ui.runPediatricAirwayAtlasButton.toolTip = (
-                "Run is disabled;"
-                + " first select input/output root directory and both configuration files"
+                "Run is disabled; first select input/output root directory and models"
+                + " directory"
             )
             self.ui.runPediatricAirwayAtlasButton.enabled = False
 
@@ -335,10 +342,7 @@ class VPAWModelWidget(
             "VPAWRootDirectory", self.ui.VPAWRootDirectory.currentPath
         )
         self._parameterNode.SetParameter(
-            "PAAConfigFile", self.ui.PAAConfigFile.currentPath
-        )
-        self._parameterNode.SetParameter(
-            "PAASegmentationConfigFile", self.ui.PAASegmentationConfigFile.currentPath
+            "VPAWModelsDirectory", self.ui.VPAWModelsDirectory.currentPath
         )
 
         self._parameterNode.EndModify(wasModified)
@@ -369,23 +373,23 @@ class VPAWModelWidget(
 
     def onRunPediatricAirwayAtlasButton(self):
         """
-        Using the supplied
-            VPAWRootDirectory :
-                input/output directory (e.g., "path/to/vpaw-data-root"),
-            PAAConfigFile :
-                config file (e.g., "configs/config_large_dataset_large_train.yaml")
-            PAASegmentationConfigFile :
-                segmentation config file (e.g.,
-                "segmentation/segmentation_settings_largetrain_step_2.yaml")
-        run the Pediatric Airway Atlas pipeline at the user's request.
+        Parameters
+        ----------
+        VPAWRootDirectory :
+            This is the input/output directory, e.g., "path/to/vpaw-data-root".  It must
+            contain FilteredControlBlindingLogUniqueScanFiltered.xls, images/*, and
+            landmarks/*.
+        VPAWModelsDirectory :
+            It must contain a file with name like "116(158.10-38.AM.24.Mar).pth".
+
+        Run the Pediatric Airway Atlas pipeline at the user's request.
         """
         with slicer.util.tryWithErrorDisplay(
             "Failed to compute results.", waitCursor=True
         ):
             self.logic.runPediatricAirwayAtlas(
                 self.ui.VPAWRootDirectory.currentPath,
-                self.ui.PAAConfigFile.currentPath,
-                self.ui.PAASegmentationConfigFile.currentPath,
+                self.ui.VPAWModelsDirectory.currentPath,
             )
 
 
@@ -395,12 +399,11 @@ class VPAWModelWidget(
 
 
 class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
-    """This class should implement all the actual
-    computation done by your module.  The interface
-    should be such that other python code can import
-    this class and make use of the functionality without
-    requiring an instance of the Widget.
-    Uses ScriptedLoadableModuleLogic base class, available at:
+    """
+    This class should implement all the actual computation done by your module.  The
+    interface should be such that other python code can import this class and make use
+    of the functionality without requiring an instance of the Widget.  Uses
+    ScriptedLoadableModuleLogic base class, available at:
     https://github.com/Slicer/Slicer/blob/main/Base/Python/slicer/ScriptedLoadableModule.py
     """
 
@@ -410,6 +413,7 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
         variables.
         """
         slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic.__init__(self)
+
         # self.python_dependencies should instead be handled as something like a
         # requirements.txt file for pediatric_airway_atlas.  Because it isn't,
         # self.python_dependencies is a sequence of pairs.  For each pair the first
@@ -445,6 +449,12 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
             ("yaml", "pyyaml"),
         )
 
+    def setDefaultParameters(self, parameterNode):
+        """
+        Initialize parameter node with default settings.
+        """
+        pass
+
     def installPediatricAirwayAtlas(self, pediatricAirwayAtlasDirectory):
         startTime = time.time()
         logging.info("Pediatric Airway Atlas installation started")
@@ -452,13 +462,14 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
         if self.installAndImportDependencies() and self.ensureModulePath(
             pediatricAirwayAtlasDirectory
         ):
-            # No error messages have been sent to the user, so let's be friendly
+            # No error messages have been sent to the user, so let's assure the user
+            # that something useful has happened.
             slicer.util.infoDisplay("Pediatric Airway Atlas is installed", "Installed")
 
         stopTime = time.time()
         logging.info(
-            "Pediatric Airway Atlas installation completed"
-            + f" in {stopTime-startTime:.2f} seconds"
+            f"Pediatric Airway Atlas installation completed in {stopTime-startTime:.2f}"
+            + " seconds"
         )
 
     def ensureModulePath(self, directory):
@@ -547,15 +558,7 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
         self.showInstalledModules(installed_modules)
         return True
 
-    def setDefaultParameters(self, parameterNode):
-        """
-        Initialize parameter node with default settings.
-        """
-        pass
-
-    def runPediatricAirwayAtlas(
-        self, vPAWRootDirectory, pAAConfigFile, pAASegmentationConfigFile
-    ):
+    def runPediatricAirwayAtlas(self, vPAWRootDirectory, vPAWModelsDirectory):
         """
         Run the Pediatric Airway Atlas pipeline.
         Can be used without GUI widget.
@@ -563,23 +566,23 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
         Parameters
         ----------
         vPAWRootDirectory : str
-            input/output directory (e.g., "path/to/vpaw-data-root"),
-        pAAConfigFile : str
-            config file (e.g., "configs/config_large_dataset_large_train.yaml")
-        pAASegmentationConfigFile : str
-            segmentation config file (e.g.,
-            "segmentation/segmentation_settings_largetrain_step_2.yaml")
+            This is the input/output directory, e.g., "path/to/vpaw-data-root".  It must
+            contain FilteredControlBlindingLogUniqueScanFiltered.xls, images/*, and
+            landmarks/*.
+        vPAWModelsDirectory : str
+            It must contain a file with name like "116(158.10-38.AM.24.Mar).pth".
         """
         startTime = time.time()
         logging.info("Pediatric Airway Atlas pipeline started")
 
         # self.convertCTScansToNRRD(vPAWRootDirectory)
         self.convertFCSVLandmarksToP3(vPAWRootDirectory)
-        self.runSegmentation(pAAConfigFile, pAASegmentationConfigFile)
+        self.runSegmentation(vPAWRootDirectory, vPAWModelsDirectory)
 
         stopTime = time.time()
         logging.info(
-            f"Pediatric Airway Atlas pipeline completed in {stopTime-startTime:.2f} seconds"
+            f"Pediatric Airway Atlas pipeline completed in {stopTime-startTime:.2f}"
+            + " seconds"
         )
 
     def convertFCSVLandmarksToP3(self, vPAWRootDirectory):
@@ -591,17 +594,107 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
             os.path.join(vPAWRootDirectory, "transformed_landmarks"),
         )
 
-    def runSegmentation(self, pAAConfigFile, pAASegmentationConfigFile):
+    def runSegmentation(self, vPAWRootDirectory, vPAWModelsDirectory):
         cwd = os.getcwd()
-        os.chdir(self.pediatric_airway_atlas_directory)
-        slicer.util._executePythonModule(
-            "atlas_builder_configurable",
-            [
-                f"--config={pAAConfigFile}",
-                f"--segmentation_config={pAASegmentationConfigFile}",
-            ],
-        )
-        os.chdir(cwd)
+        ConfigHandle, ConfigName = None, None
+        SegmentHandle, SegmentName = None, None
+        try:
+            # Change directory and create files
+            os.chdir(self.pediatric_airway_atlas_directory)
+            ConfigHandle, ConfigName = tempfile.mkstemp(suffix=".yaml", text=True)
+            SegmentHandle, SegmentName = tempfile.mkstemp(suffix=".yaml", text=True)
+
+            # Add text to the main configuration file
+            b_s_f_s = "False"
+            n_p = 1
+            os.write(
+                ConfigHandle,
+                f"""root: {vPAWRootDirectory}
+n_samples: -1  # how many samples to use to build the atlas, -1 denotes to use all
+metadata_excel_fname: FilteredControlBlindingLogUniqueScanFiltered.xls
+band_depth_ages: [20, 40, 60, 80, 100, 120, 140]  # also for functional boxplot
+n_centerline_points: 200
+n_curve_points: 500
+TARGET_LANDMARKS_ORDERED: [nasalspine, choana, epiglottistip, tvc, subglottis, carina]
+dilation_times: 20
+ALL_POSSIBLE_LANDMARKS: [carina, tracheacarina, trachea, tvc, subglottis, epiglottistip, columella, nasalspine, rightalarim, leftalarim, nosetip, [choana,posteriorinferiorvomercorner], pyrinaaperture, [baseoftongue,tonguebase]]
+plane_estimation_based_mesh_area: True
+use_planes_for_laplace_marking: True
+balance_spacing_for_segmentation: {b_s_f_s}
+num_processes: {n_p}
+""".encode(),
+            )
+            os.close(ConfigHandle)
+            ConfigHandle = None
+
+            # Add text to the configuration file for segmentation
+            os.write(
+                SegmentHandle,
+                f"""# Vision41
+data_root_dir: {vPAWRootDirectory}
+model_save_directory: {vPAWModelsDirectory}
+
+crop_size: [192, 192, 192]
+
+network_model:
+  name: TwoStepSeparatedModel
+  params: {{}}
+
+dataset:
+  image_min_max_normalization: [-1024.0, 3071.0]
+  extra_keys_to_fetch: [image_spacing]
+  train_test_split_fpath: "segmentation/train_test_split_new_with_spherical.yaml"
+
+loss_type: ce
+loss_params:
+  pos_weight: [2.]
+  loss_multiplier: 10.0
+
+training:
+  batch_size: 8
+  num_data_loaders: 24
+  log_interval: 50
+
+  max_training_iteration: 1000000
+
+  optimizer_params:
+    lr: 0.0001
+    weight_decay: 0.00001
+
+
+inference:
+  force_spacing:
+  tiles_overlap: 0.75
+  tile_fusion_mode: gaussian
+
+
+train_devices:
+  - 0
+  - 1
+""".encode(),
+            )
+            os.close(SegmentHandle)
+            SegmentHandle = None
+
+            # Run the pipeline
+            slicer.util._executePythonModule(
+                "atlas_builder_configurable",
+                [f"--config={ConfigName}", f"--segmentation_config={SegmentName}"],
+            )
+        finally:
+            if ConfigHandle is not None:
+                os.close(ConfigHandle)
+                ConfigHandle = None
+            if ConfigName is not None and os.path.exists(ConfigName):
+                os.remove(ConfigName)
+                ConfigName = None
+            if SegmentHandle is not None:
+                os.close(SegmentHandle)
+                SegmentHandle = None
+            if SegmentName is not None and os.path.exists(SegmentName):
+                os.remove(SegmentName)
+                SegmentName = None
+            os.chdir(cwd)
 
 
 #
