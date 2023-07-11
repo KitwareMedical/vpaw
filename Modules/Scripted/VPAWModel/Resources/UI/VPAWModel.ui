@@ -40,7 +40,7 @@
    <item>
     <widget class="ctkCollapsibleButton" name="installPediatricAirwayAtlasCollapsibleButton" native="true">
      <property name="text" stdset="0">
-      <string>VPAW Model: Install Pediatric Airway Atlas</string>
+      <string>VPAW Model: Link to Pediatric Airway Atlas Codebase</string>
      </property>
      <property name="collapsed" stdset="0">
       <bool>false</bool>
@@ -66,10 +66,10 @@
          <bool>false</bool>
         </property>
         <property name="toolTip">
-         <string>Install Pediatric Airway Atlas and Dependencies</string>
+         <string>Link to Pediatric Airway Atlas codebase and install dependencies</string>
         </property>
         <property name="text">
-         <string>Install Pediatric Airway Atlas and Dependencies</string>
+         <string>Link to Pediatric Airway Atlas codebase and install dependencies</string>
         </property>
        </widget>
       </item>

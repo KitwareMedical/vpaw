@@ -10,6 +10,7 @@ import sys
 import tempfile
 import time
 import vtk
+import yaml
 
 
 class BusyCursor:
@@ -162,6 +163,15 @@ class VPAWModelWidget(
         self.ui.VPAWModelsDirectory.connect(
             "currentPathChanged(const QString&)", self.updateParameterNodeFromGUI
         )
+        self.ui.PediatricAirwayAtlasDirectory.connect(
+            "validInputChanged(bool)", self.updateParameterNodeFromGUI
+        )
+        self.ui.VPAWRootDirectory.connect(
+            "validInputChanged(bool)", self.updateParameterNodeFromGUI
+        )
+        self.ui.VPAWModelsDirectory.connect(
+            "validInputChanged(bool)", self.updateParameterNodeFromGUI
+        )
 
         # Buttons
         self.ui.VPAWVisualizeButton.connect("clicked(bool)", self.onVPAWVisualizeButton)
@@ -287,7 +297,7 @@ class VPAWModelWidget(
         self.ui.PediatricAirwayAtlasDirectory.toolTip = "Root directory for source code"
         if os.path.isdir(self.ui.PediatricAirwayAtlasDirectory.currentPath):
             self.ui.installPediatricAirwayAtlasButton.toolTip = (
-                "Install Pediatric Airway Atlas and Dependencies"
+                "Link to Pediatric Airway Atlas codebase and install dependencies"
             )
             self.ui.installPediatricAirwayAtlasButton.enabled = True
         else:
@@ -529,7 +539,7 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
             try:
                 # Install missing packages
                 with BusyCursor():
-                    slicer.util.pip_install(["-U", "pip", "setuptools", "wheel"])
+                    slicer.util.pip_install(["--upgrade", "pip", "setuptools", "wheel"])
                     slicer.util.pip_install(
                         [pip_install_name for _, pip_install_name in needs_installation]
                     )
@@ -607,74 +617,75 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
             # Add text to the main configuration file
             b_s_f_s = "False"
             n_p = 1
-            os.write(
-                ConfigHandle,
-                f"""root: {vPAWRootDirectory}
-n_samples: -1  # how many samples to use to build the atlas, -1 denotes to use all
-metadata_excel_fname: FilteredControlBlindingLogUniqueScanFiltered.xls
-band_depth_ages: [20, 40, 60, 80, 100, 120, 140]  # also for functional boxplot
-n_centerline_points: 200
-n_curve_points: 500
-TARGET_LANDMARKS_ORDERED: [nasalspine, choana, epiglottistip, tvc, subglottis, carina]
-dilation_times: 20
-ALL_POSSIBLE_LANDMARKS: [carina, tracheacarina, trachea, tvc, subglottis, epiglottistip, columella, nasalspine, rightalarim, leftalarim, nosetip, [choana,posteriorinferiorvomercorner], pyrinaaperture, [baseoftongue,tonguebase]]
-plane_estimation_based_mesh_area: True
-use_planes_for_laplace_marking: True
-balance_spacing_for_segmentation: {b_s_f_s}
-num_processes: {n_p}
-""".encode(),
+            ConfigYaml = dict(
+                root=vPAWRootDirectory,
+                n_samples=-1,
+                metadata_excel_fname="FilteredControlBlindingLogUniqueScanFiltered.xls",
+                band_depth_ages=[20, 40, 60, 80, 100, 120, 140],
+                n_centerline_points=200,
+                n_curve_points=500,
+                TARGET_LANDMARKS_ORDERED=[
+                    "nasalspine",
+                    "choana",
+                    "epiglottistip",
+                    "tvc",
+                    "subglottis",
+                    "carina",
+                ],
+                dilation_times=20,
+                ALL_POSSIBLE_LANDMARKS=[
+                    "carina",
+                    "tracheacarina",
+                    "trachea",
+                    "tvc",
+                    "subglottis",
+                    "epiglottistip",
+                    "columella",
+                    "nasalspine",
+                    "rightalarim",
+                    "leftalarim",
+                    "nosetip",
+                    ["choana", "posteriorinferiorvomercorner"],
+                    "pyrinaaperture",
+                    ["baseoftongue", "tonguebase"],
+                ],
+                plane_estimation_based_mesh_area=True,
+                use_planes_for_laplace_marking=True,
+                balance_spacing_for_segmentation=b_s_f_s,
+                num_processes=n_p,
             )
-            os.close(ConfigHandle)
-            ConfigHandle = None
+            with os.fdopen(ConfigHandle, "w") as ConfigFile:
+                ConfigHandle = None  # because handle will close when `with` terminates
+                yaml.dump(ConfigYaml, ConfigFile)
 
             # Add text to the configuration file for segmentation
-            os.write(
-                SegmentHandle,
-                f"""# Vision41
-data_root_dir: {vPAWRootDirectory}
-model_save_directory: {vPAWModelsDirectory}
-
-crop_size: [192, 192, 192]
-
-network_model:
-  name: TwoStepSeparatedModel
-  params: {{}}
-
-dataset:
-  image_min_max_normalization: [-1024.0, 3071.0]
-  extra_keys_to_fetch: [image_spacing]
-  train_test_split_fpath: "segmentation/train_test_split_new_with_spherical.yaml"
-
-loss_type: ce
-loss_params:
-  pos_weight: [2.]
-  loss_multiplier: 10.0
-
-training:
-  batch_size: 8
-  num_data_loaders: 24
-  log_interval: 50
-
-  max_training_iteration: 1000000
-
-  optimizer_params:
-    lr: 0.0001
-    weight_decay: 0.00001
-
-
-inference:
-  force_spacing:
-  tiles_overlap: 0.75
-  tile_fusion_mode: gaussian
-
-
-train_devices:
-  - 0
-  - 1
-""".encode(),
+            SegmentYaml = dict(
+                data_root_dir=vPAWRootDirectory,
+                model_save_directory=vPAWModelsDirectory,
+                crop_size=[192, 192, 192],
+                network_model=dict(name="TwoStepSeparatedModel", params=dict()),
+                dataset=dict(
+                    image_min_max_normalization=[-1024.0, 3071.0],
+                    extra_keys_to_fetch=["image_spacing"],
+                    train_test_split_fpath="segmentation/train_test_split_new_with_spherical.yaml",
+                ),
+                loss_type="ce",
+                loss_params=dict(pos_weight=[2.0], loss_multiplier=10.0),
+                training=dict(
+                    batch_size=8,
+                    num_data_loaders=24,
+                    log_interval=50,
+                    max_training_iteration=1000000,
+                    optimizer_params=dict(lr=0.0001, weight_decay=1e-05),
+                ),
+                inference=dict(
+                    force_spacing=None, tiles_overlap=0.75, tile_fusion_mode="gaussian"
+                ),
+                train_devices=[0, 1],
             )
-            os.close(SegmentHandle)
-            SegmentHandle = None
+            with os.fdopen(SegmentHandle, "w") as SegmentFile:
+                SegmentHandle = None  # because handle will close when `with` terminates
+                yaml.dump(SegmentYaml, SegmentFile)
 
             # Run the pipeline
             slicer.util._executePythonModule(
