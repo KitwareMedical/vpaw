@@ -191,6 +191,12 @@ class VPAWVisualizeWidget(
         self.ui.PatientPrefix.connect(
             "textChanged(const QString&)", self.updateParameterNodeFromGUI
         )
+        self.ui.DataDirectory.connect(
+            "validInputChanged(bool)", self.updateParameterNodeFromGUI
+        )
+        self.ui.PatientPrefix.connect(
+            "validInputChanged(bool)", self.updateParameterNodeFromGUI
+        )
 
         # Buttons
         self.ui.HomeButton.connect("clicked(bool)", self.onHomeButton)

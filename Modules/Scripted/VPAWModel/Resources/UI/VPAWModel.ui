@@ -38,14 +38,14 @@
     </widget>
    </item>
    <item>
-    <widget class="ctkCollapsibleButton" name="installPediatricAirwayAtlasCollapsibleButton" native="true">
+    <widget class="ctkCollapsibleButton" name="linkPediatricAirwayAtlasCollapsibleButton" native="true">
      <property name="text" stdset="0">
       <string>VPAW Model: Link to Pediatric Airway Atlas Codebase</string>
      </property>
      <property name="collapsed" stdset="0">
       <bool>false</bool>
      </property>
-     <layout class="QFormLayout" name="installPediatricAirwayAtlasFormLayout">
+     <layout class="QFormLayout" name="linkPediatricAirwayAtlasFormLayout">
       <item row="0" column="0">
        <widget class="QLabel" name="pediatricAirwayAtlasDirectoryLabel">
         <property name="text">
@@ -61,7 +61,7 @@
        </widget>
       </item>
       <item row="1" column="0" colspan="2">
-       <widget class="QPushButton" name="installPediatricAirwayAtlasButton">
+       <widget class="QPushButton" name="linkPediatricAirwayAtlasButton">
         <property name="enabled">
          <bool>false</bool>
         </property>
@@ -110,7 +110,17 @@
         </property>
        </widget>
       </item>
-      <item row="2" column="0" colspan="2">
+      <item row="2" column="0">
+       <widget class="QLabel" name="patientPrefixLabel">
+        <property name="text">
+         <string>Patient prefix (optional)</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QLineEdit" name="PatientPrefix"/>
+      </item>
+      <item row="3" column="0" colspan="2">
        <widget class="QPushButton" name="runPediatricAirwayAtlasButton">
         <property name="enabled">
          <bool>false</bool>

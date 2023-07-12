@@ -163,6 +163,9 @@ class VPAWModelWidget(
         self.ui.VPAWModelsDirectory.connect(
             "currentPathChanged(const QString&)", self.updateParameterNodeFromGUI
         )
+        self.ui.PatientPrefix.connect(
+            "textChanged(const QString&)", self.updateParameterNodeFromGUI
+        )
         self.ui.PediatricAirwayAtlasDirectory.connect(
             "validInputChanged(bool)", self.updateParameterNodeFromGUI
         )
@@ -176,7 +179,7 @@ class VPAWModelWidget(
         # Buttons
         self.ui.VPAWVisualizeButton.connect("clicked(bool)", self.onVPAWVisualizeButton)
         self.ui.HomeButton.connect("clicked(bool)", self.onHomeButton)
-        self.ui.installPediatricAirwayAtlasButton.connect(
+        self.ui.linkPediatricAirwayAtlasButton.connect(
             "clicked(bool)", self.onInstallPediatricAirwayAtlasButton
         )
         self.ui.runPediatricAirwayAtlasButton.connect(
@@ -292,20 +295,21 @@ class VPAWModelWidget(
         self.ui.VPAWModelsDirectory.currentPath = self._parameterNode.GetParameter(
             "VPAWModelsDirectory"
         )
+        self.ui.PatientPrefix.text = self._parameterNode.GetParameter("PatientPrefix")
 
         # Update buttons states and tooltips
         self.ui.PediatricAirwayAtlasDirectory.toolTip = "Root directory for source code"
         if os.path.isdir(self.ui.PediatricAirwayAtlasDirectory.currentPath):
-            self.ui.installPediatricAirwayAtlasButton.toolTip = (
+            self.ui.linkPediatricAirwayAtlasButton.toolTip = (
                 "Link to Pediatric Airway Atlas codebase and install dependencies"
             )
-            self.ui.installPediatricAirwayAtlasButton.enabled = True
+            self.ui.linkPediatricAirwayAtlasButton.enabled = True
         else:
-            self.ui.installPediatricAirwayAtlasButton.toolTip = (
+            self.ui.linkPediatricAirwayAtlasButton.toolTip = (
                 "Install is disabled; first select a valid source code directory for"
                 + " the Pediatric Airway Atlas"
             )
-            self.ui.installPediatricAirwayAtlasButton.enabled = False
+            self.ui.linkPediatricAirwayAtlasButton.enabled = False
 
         self.ui.VPAWRootDirectory.toolTip = (
             "Directory containing FilteredControlBlindingLogUniqueScanFiltered.xls,"
@@ -313,6 +317,9 @@ class VPAWModelWidget(
         )
         self.ui.VPAWModelsDirectory.toolTip = (
             "Directory containing file named like '116(158.10-38.AM.24.Mar).pth'"
+        )
+        self.ui.PatientPrefix.toolTip = (
+            "Process only files with this prefix.  Blank means all files."
         )
         if os.path.isdir(self.ui.VPAWRootDirectory.currentPath) and os.path.isdir(
             self.ui.VPAWModelsDirectory.currentPath
@@ -354,6 +361,7 @@ class VPAWModelWidget(
         self._parameterNode.SetParameter(
             "VPAWModelsDirectory", self.ui.VPAWModelsDirectory.currentPath
         )
+        self._parameterNode.SetParameter("PatientPrefix", self.ui.PatientPrefix.text)
 
         self._parameterNode.EndModify(wasModified)
 
@@ -377,7 +385,7 @@ class VPAWModelWidget(
         with slicer.util.tryWithErrorDisplay(
             "Failed to compute results.", waitCursor=True
         ):
-            self.logic.installPediatricAirwayAtlas(
+            self.logic.linkPediatricAirwayAtlas(
                 self.ui.PediatricAirwayAtlasDirectory.currentPath
             )
 
@@ -391,6 +399,8 @@ class VPAWModelWidget(
             landmarks/*.
         VPAWModelsDirectory :
             It must contain a file with name like "116(158.10-38.AM.24.Mar).pth".
+        PatientPrefix :
+            Process only files with this prefix.  Blank means all files.
 
         Run the Pediatric Airway Atlas pipeline at the user's request.
         """
@@ -400,6 +410,7 @@ class VPAWModelWidget(
             self.logic.runPediatricAirwayAtlas(
                 self.ui.VPAWRootDirectory.currentPath,
                 self.ui.VPAWModelsDirectory.currentPath,
+                self.ui.PatientPrefix.text,
             )
 
 
@@ -465,7 +476,7 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
         """
         pass
 
-    def installPediatricAirwayAtlas(self, pediatricAirwayAtlasDirectory):
+    def linkPediatricAirwayAtlas(self, pediatricAirwayAtlasDirectory):
         startTime = time.time()
         logging.info("Pediatric Airway Atlas installation started")
 
@@ -474,7 +485,7 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
         ):
             # No error messages have been sent to the user, so let's assure the user
             # that something useful has happened.
-            slicer.util.infoDisplay("Pediatric Airway Atlas is installed", "Installed")
+            slicer.util.infoDisplay("Pediatric Airway Atlas is linked", "Linked")
 
         stopTime = time.time()
         logging.info(
@@ -568,7 +579,9 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
         self.showInstalledModules(installed_modules)
         return True
 
-    def runPediatricAirwayAtlas(self, vPAWRootDirectory, vPAWModelsDirectory):
+    def runPediatricAirwayAtlas(
+        self, vPAWRootDirectory, vPAWModelsDirectory, patientPrefix
+    ):
         """
         Run the Pediatric Airway Atlas pipeline.
         Can be used without GUI widget.
@@ -581,13 +594,19 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
             landmarks/*.
         vPAWModelsDirectory : str
             It must contain a file with name like "116(158.10-38.AM.24.Mar).pth".
+        patientPrefix : str
+            Process only files with this prefix.  Blank means all files.
         """
         startTime = time.time()
         logging.info("Pediatric Airway Atlas pipeline started")
 
         # self.convertCTScansToNRRD(vPAWRootDirectory)
-        self.convertFCSVLandmarksToP3(vPAWRootDirectory)
-        self.runSegmentation(vPAWRootDirectory, vPAWModelsDirectory)
+        if self.convertFCSVLandmarksToP3(
+            vPAWRootDirectory, patientPrefix
+        ) and self.runSegmentation(
+            vPAWRootDirectory, vPAWModelsDirectory, patientPrefix
+        ):
+            slicer.util.infoDisplay("The pipeline has completed", "Pipeline ran")
 
         stopTime = time.time()
         logging.info(
@@ -595,24 +614,48 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
             + " seconds"
         )
 
-    def convertFCSVLandmarksToP3(self, vPAWRootDirectory):
+    def convertFCSVLandmarksToP3(self, vPAWRootDirectory, patientPrefix):
         import conversion_utils.generate_pixel_space_landmarks
 
-        conversion_utils.generate_pixel_space_landmarks.convert_landmarks(
-            os.path.join(vPAWRootDirectory, "images"),
-            os.path.join(vPAWRootDirectory, "landmarks"),
-            os.path.join(vPAWRootDirectory, "transformed_landmarks"),
-        )
+        images_dir = os.path.join(vPAWRootDirectory, "images")
+        input_landmarks_dir = os.path.join(vPAWRootDirectory, "landmarks")
+        output_landmarks_dir = os.path.join(vPAWRootDirectory, "transformed_landmarks")
+        num_workers = 1
+        subject_prefix = patientPrefix
+        if subject_prefix is not None and subject_prefix != "":
+            try:
+                conversion_utils.generate_pixel_space_landmarks.convert_landmarks(
+                    images_dir,
+                    input_landmarks_dir,
+                    output_landmarks_dir,
+                    num_workers,
+                    subject_prefix,
+                )
+            except:
+                slicer.util.errorDisplay(
+                    "The run failed. It may be that a non-blank patient prefix is not"
+                    + " supported by this version of pediatric_airway_atlas"
+                    + ".conversion_utils.generate_pixel_space_landmarks"
+                    + ".convert_landmarks."
+                    + " Please update pediatric_airway_atlas and try again.",
+                    "Run Error",
+                )
+                return False
+        else:
+            conversion_utils.generate_pixel_space_landmarks.convert_landmarks(
+                images_dir, input_landmarks_dir, output_landmarks_dir, num_workers
+            )
+        return True
 
-    def runSegmentation(self, vPAWRootDirectory, vPAWModelsDirectory):
+    def runSegmentation(self, vPAWRootDirectory, vPAWModelsDirectory, patientPrefix):
         cwd = os.getcwd()
-        ConfigHandle, ConfigName = None, None
-        SegmentHandle, SegmentName = None, None
+        ConfigDescriptor, ConfigName = None, None
+        SegmentDescriptor, SegmentName = None, None
         try:
             # Change directory and create files
             os.chdir(self.pediatric_airway_atlas_directory)
-            ConfigHandle, ConfigName = tempfile.mkstemp(suffix=".yaml", text=True)
-            SegmentHandle, SegmentName = tempfile.mkstemp(suffix=".yaml", text=True)
+            ConfigDescriptor, ConfigName = tempfile.mkstemp(suffix=".yaml", text=True)
+            SegmentDescriptor, SegmentName = tempfile.mkstemp(suffix=".yaml", text=True)
 
             # Add text to the main configuration file
             b_s_f_s = "False"
@@ -654,8 +697,8 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
                 balance_spacing_for_segmentation=b_s_f_s,
                 num_processes=n_p,
             )
-            with os.fdopen(ConfigHandle, "w") as ConfigFile:
-                ConfigHandle = None  # because handle will close when `with` terminates
+            with os.fdopen(ConfigDescriptor, "w") as ConfigFile:
+                ConfigDescriptor = None  # descriptor will close when `with` exits
                 yaml.dump(ConfigYaml, ConfigFile)
 
             # Add text to the configuration file for segmentation
@@ -683,29 +726,51 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
                 ),
                 train_devices=[0, 1],
             )
-            with os.fdopen(SegmentHandle, "w") as SegmentFile:
-                SegmentHandle = None  # because handle will close when `with` terminates
+            with os.fdopen(SegmentDescriptor, "w") as SegmentFile:
+                SegmentDescriptor = None  # descriptor will close when `with` exits
                 yaml.dump(SegmentYaml, SegmentFile)
 
             # Run the pipeline
-            slicer.util._executePythonModule(
-                "atlas_builder_configurable",
-                [f"--config={ConfigName}", f"--segmentation_config={SegmentName}"],
-            )
+            if patientPrefix is not None and patientPrefix != "":
+                try:
+                    slicer.util._executePythonModule(
+                        "atlas_builder_configurable",
+                        [
+                            f"--config={ConfigName}",
+                            f"--segmentation_config={SegmentName}",
+                            f"--subject_prefix={patientPrefix}",
+                        ],
+                    )
+                except:
+                    slicer.util.errorDisplay(
+                        "The run failed. It may be that a non-blank patient prefix is"
+                        + " not supported by this version of pediatric_airway_atlas"
+                        + ".atlas_builder_configurable."
+                        + " Please update pediatric_airway_atlas and try again.",
+                        "Run Error",
+                    )
+                    return False
+            else:
+                slicer.util._executePythonModule(
+                    "atlas_builder_configurable",
+                    [f"--config={ConfigName}", f"--segmentation_config={SegmentName}"],
+                )
+
         finally:
-            if ConfigHandle is not None:
-                os.close(ConfigHandle)
-                ConfigHandle = None
+            if ConfigDescriptor is not None:
+                os.close(ConfigDescriptor)
+                ConfigDescriptor = None
             if ConfigName is not None and os.path.exists(ConfigName):
                 os.remove(ConfigName)
                 ConfigName = None
-            if SegmentHandle is not None:
-                os.close(SegmentHandle)
-                SegmentHandle = None
+            if SegmentDescriptor is not None:
+                os.close(SegmentDescriptor)
+                SegmentDescriptor = None
             if SegmentName is not None and os.path.exists(SegmentName):
                 os.remove(SegmentName)
                 SegmentName = None
             os.chdir(cwd)
+        return True
 
 
 #
