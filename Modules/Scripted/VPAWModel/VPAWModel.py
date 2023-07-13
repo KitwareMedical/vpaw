@@ -10,7 +10,6 @@ import sys
 import tempfile
 import time
 import vtk
-import yaml
 
 
 class BusyCursor:
@@ -652,6 +651,9 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
         ConfigDescriptor, ConfigName = None, None
         SegmentDescriptor, SegmentName = None, None
         try:
+            # Cannot import yaml at file scope because it might not yet be installed at
+            # that time.
+            import yaml
             # Change directory and create files
             os.chdir(self.pediatric_airway_atlas_directory)
             ConfigDescriptor, ConfigName = tempfile.mkstemp(suffix=".yaml", text=True)
