@@ -614,36 +614,50 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
         )
 
     def convertFCSVLandmarksToP3(self, vPAWRootDirectory, patientPrefix):
-        import conversion_utils.generate_pixel_space_landmarks
+        cwd = os.getcwd()
+        try:
+            os.chdir(self.pediatric_airway_atlas_directory)
 
-        images_dir = os.path.join(vPAWRootDirectory, "images")
-        input_landmarks_dir = os.path.join(vPAWRootDirectory, "landmarks")
-        output_landmarks_dir = os.path.join(vPAWRootDirectory, "transformed_landmarks")
-        num_workers = 1
-        subject_prefix = patientPrefix
-        if subject_prefix is not None and subject_prefix != "":
-            try:
-                conversion_utils.generate_pixel_space_landmarks.convert_landmarks(
-                    images_dir,
-                    input_landmarks_dir,
-                    output_landmarks_dir,
-                    num_workers,
-                    subject_prefix,
-                )
-            except:
-                slicer.util.errorDisplay(
-                    "The run failed.  It may be that a non-blank patient prefix is not"
-                    + " supported by this version of pediatric_airway_atlas"
-                    + ".conversion_utils.generate_pixel_space_landmarks"
-                    + ".convert_landmarks."
-                    + " Please update pediatric_airway_atlas and try again.",
-                    "Run Error",
-                )
-                return False
-        else:
-            conversion_utils.generate_pixel_space_landmarks.convert_landmarks(
-                images_dir, input_landmarks_dir, output_landmarks_dir, num_workers
+            images_dir = os.path.join(vPAWRootDirectory, "images")
+            input_landmarks_dir = os.path.join(vPAWRootDirectory, "landmarks")
+            output_landmarks_dir = os.path.join(
+                vPAWRootDirectory, "transformed_landmarks"
             )
+            num_workers = 1
+            subject_prefix = patientPrefix
+            if subject_prefix is not None and subject_prefix != "":
+                try:
+                    slicer.util._executePythonModule(
+                        "conversion_utils.generate_pixel_space_landmarks",
+                        [
+                            f"--images_dir={images_dir}",
+                            f"--input_landmarks_dir={input_landmarks_dir}",
+                            f"--output_landmarks_dir={output_landmarks_dir}",
+                            f"--num_workers={num_workers}",
+                            f"--subject_prefix={subject_prefix}",
+                        ],
+                    )
+                except:
+                    slicer.util.errorDisplay(
+                        "The run failed.  It may be that a non-blank patient prefix is"
+                        + " not supported by this version of pediatric_airway_atlas"
+                        + ".conversion_utils.generate_pixel_space_landmarks."
+                        + "  Please update pediatric_airway_atlas and try again.",
+                        "Run Error",
+                    )
+                    return False
+            else:
+                slicer.util._executePythonModule(
+                    "conversion_utils.generate_pixel_space_landmarks",
+                    [
+                        f"--images_dir={images_dir}",
+                        f"--input_landmarks_dir={input_landmarks_dir}",
+                        f"--output_landmarks_dir={output_landmarks_dir}",
+                        f"--num_workers={num_workers}",
+                    ],
+                )
+        finally:
+            os.chdir(cwd)
         return True
 
     def runSegmentation(self, vPAWRootDirectory, vPAWModelsDirectory, patientPrefix):
@@ -654,6 +668,7 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
             # Cannot import yaml at file scope because it might not yet be installed at
             # that time.
             import yaml
+
             # Change directory and create files
             os.chdir(self.pediatric_airway_atlas_directory)
             ConfigDescriptor, ConfigName = tempfile.mkstemp(suffix=".yaml", text=True)
