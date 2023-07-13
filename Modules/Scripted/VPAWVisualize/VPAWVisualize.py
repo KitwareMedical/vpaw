@@ -193,9 +193,6 @@ class VPAWVisualizeWidget(
         self.ui.DataDirectory.connect(
             "validInputChanged(bool)", self.updateParameterNodeFromGUI
         )
-        self.ui.PatientPrefix.connect(
-            "validInputChanged(bool)", self.updateParameterNodeFromGUI
-        )
 
         # Buttons
         self.ui.HomeButton.connect("clicked(bool)", self.onHomeButton)
@@ -624,8 +621,7 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
             return self.loadCenterlineFromP3FileContents(contents)
 
         print(f"File type for {filename} is not currently supported")
-        print(f"{filename} contains {summary_repr(contents)}")  # !!!
-        # !!! Create node from contents
+        print(f"{filename} contains {summary_repr(contents)}")
 
         return None
 

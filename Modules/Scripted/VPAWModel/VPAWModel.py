@@ -104,11 +104,10 @@ class VPAWModelWidget(
         slicer.ScriptedLoadableModule.ScriptedLoadableModuleWidget.__init__(
             self, parent
         )
-        # needed for parameter node observation:
         slicer.util.VTKObservationMixin.__init__(self)
+
         self.logic = None
-        self._parameterNode = None
-        self._updatingGUIFromParameterNode = False
+        self._updatingGUIFromQSettings = False
 
     def setup(self):
         """
@@ -144,7 +143,7 @@ class VPAWModelWidget(
 
         # Connections
 
-        # These connections ensure that we update parameter node when scene is closed
+        # Connections for actions associated with a scene close.
         self.addObserver(
             slicer.mrmlScene, slicer.mrmlScene.StartCloseEvent, self.onSceneStartClose
         )
@@ -153,41 +152,41 @@ class VPAWModelWidget(
         )
 
         # These connections ensure that whenever user changes some settings on the GUI,
-        # that is saved in the MRML scene (in the selected parameter node).
+        # that is saved to QSettings.
         self.ui.PediatricAirwayAtlasDirectory.connect(
-            "currentPathChanged(const QString&)", self.updateParameterNodeFromGUI
+            "currentPathChanged(const QString&)", self.updateQSettingsFromGUI
         )
         self.ui.VPAWRootDirectory.connect(
-            "currentPathChanged(const QString&)", self.updateParameterNodeFromGUI
+            "currentPathChanged(const QString&)", self.updateQSettingsFromGUI
         )
         self.ui.VPAWModelsDirectory.connect(
-            "currentPathChanged(const QString&)", self.updateParameterNodeFromGUI
+            "currentPathChanged(const QString&)", self.updateQSettingsFromGUI
         )
         self.ui.PatientPrefix.connect(
-            "textChanged(const QString&)", self.updateParameterNodeFromGUI
+            "textChanged(const QString&)", self.updateQSettingsFromGUI
         )
         self.ui.PediatricAirwayAtlasDirectory.connect(
-            "validInputChanged(bool)", self.updateParameterNodeFromGUI
+            "validInputChanged(bool)", self.updateQSettingsFromGUI
         )
         self.ui.VPAWRootDirectory.connect(
-            "validInputChanged(bool)", self.updateParameterNodeFromGUI
+            "validInputChanged(bool)", self.updateQSettingsFromGUI
         )
         self.ui.VPAWModelsDirectory.connect(
-            "validInputChanged(bool)", self.updateParameterNodeFromGUI
+            "validInputChanged(bool)", self.updateQSettingsFromGUI
         )
 
         # Buttons
         self.ui.VPAWVisualizeButton.connect("clicked(bool)", self.onVPAWVisualizeButton)
         self.ui.HomeButton.connect("clicked(bool)", self.onHomeButton)
         self.ui.linkPediatricAirwayAtlasButton.connect(
-            "clicked(bool)", self.onInstallPediatricAirwayAtlasButton
+            "clicked(bool)", self.onLinkPediatricAirwayAtlasButton
         )
         self.ui.runPediatricAirwayAtlasButton.connect(
             "clicked(bool)", self.onRunPediatricAirwayAtlasButton
         )
 
-        # Make sure parameter node is initialized (needed for module reload)
-        self.initializeParameterNode()
+        # No need to call self.updateGUIFromQSettings() because it will be called upon
+        # self.enter().
 
     def cleanup(self):
         """
@@ -199,105 +198,55 @@ class VPAWModelWidget(
         """
         Called each time the user opens this module.
         """
-        # Make sure parameter node exists and observed
-        self.initializeParameterNode()
+        # Initialize the GUI with any saved settings
+        self.updateGUIFromQSettings()
 
     def exit(self):
         """
         Called each time the user opens a different module.
         """
-        # Do not react to parameter node changes (GUI wlil be updated when the user
-        # enters into the module)
-        self.removeObserver(
-            self._parameterNode,
-            vtk.vtkCommand.ModifiedEvent,
-            self.updateGUIFromParameterNode,
-        )
+        pass
 
     def onSceneStartClose(self, caller, event):
         """
         Called just before the scene is closed.
         """
-        # Parameter node will be reset, do not use it anymore
-        self.setParameterNode(None)
+        pass
 
     def onSceneEndClose(self, caller, event):
         """
         Called just after the scene is closed.
         """
-        # If this module is shown while the scene is closed then recreate a new
-        # parameter node immediately
-        if self.parent.isEntered:
-            self.initializeParameterNode()
+        pass
 
-    def initializeParameterNode(self):
+    def updateGUIFromQSettings(self):
         """
-        Ensure parameter node exists and observed.
+        Load GUI with values from QSettings.
         """
-        # Parameter node stores all user choices in parameter values, node selections,
-        # etc. so that when the scene is saved and reloaded, these settings are
-        # restored.
-
-        self.setParameterNode(self.logic.getParameterNode())
-
-    def setParameterNode(self, inputParameterNode):
-        """
-        Set and observe parameter node.  Observation is needed because when the
-        parameter node is changed then the GUI must be updated immediately.
-        """
-        if inputParameterNode:
-            self.logic.setDefaultParameters(inputParameterNode)
-
-        # Unobserve previously selected parameter node and add an observer to the newly
-        # selected.  Changes of parameter node are observed so that whenever parameters
-        # are changed by a script or any other module those are reflected immediately in
-        # the GUI.
-        if self._parameterNode is not None and self.hasObserver(
-            self._parameterNode,
-            vtk.vtkCommand.ModifiedEvent,
-            self.updateGUIFromParameterNode,
-        ):
-            self.removeObserver(
-                self._parameterNode,
-                vtk.vtkCommand.ModifiedEvent,
-                self.updateGUIFromParameterNode,
-            )
-        self._parameterNode = inputParameterNode
-        if self._parameterNode is not None:
-            self.addObserver(
-                self._parameterNode,
-                vtk.vtkCommand.ModifiedEvent,
-                self.updateGUIFromParameterNode,
-            )
-
-        # Initial GUI update
-        self.updateGUIFromParameterNode()
-
-    def updateGUIFromParameterNode(self, caller=None, event=None):
-        """
-        This method is called whenever parameter node is changed.  The module GUI is
-        updated to show the current state of the parameter node.
-        """
-        if self._parameterNode is None or self._updatingGUIFromParameterNode:
-            return
-
-        # Make sure GUI changes do not call updateParameterNodeFromGUI (it could cause
-        # infinite loop)
-        self._updatingGUIFromParameterNode = True
+        # Let everyone know that we are updating the GUI so that any reactions to that
+        # don't get into an infinite loop.
+        self._updatingGUIFromQSettings = True
 
         # Update node selectors and sliders
-        self.ui.PediatricAirwayAtlasDirectory.currentPath = (
-            self._parameterNode.GetParameter("PediatricAirwayAtlasDirectory")
+        qsettings = qt.QSettings()
+        qsettings.beginGroup("VPAWModel")
+        self.ui.PediatricAirwayAtlasDirectory.currentPath = qsettings.value(
+            "PediatricAirwayAtlasDirectory", ""
         )
-        self.ui.VPAWRootDirectory.currentPath = self._parameterNode.GetParameter(
-            "VPAWRootDirectory"
+        self.ui.VPAWRootDirectory.currentPath = qsettings.value("VPAWRootDirectory", "")
+        self.ui.VPAWModelsDirectory.currentPath = qsettings.value(
+            "VPAWModelsDirectory", ""
         )
-        self.ui.VPAWModelsDirectory.currentPath = self._parameterNode.GetParameter(
-            "VPAWModelsDirectory"
-        )
-        self.ui.PatientPrefix.text = self._parameterNode.GetParameter("PatientPrefix")
+        qsettings.endGroup()
 
-        # Update buttons states and tooltips
+        # Now that we've updated the form widgets' input fields, let's update other
+        # widgets and other properties.
+        self.updateButtonStatesAndTooltips()
+
+        # All the GUI updates are done
+        self._updatingGUIFromQSettings = False
+
+    def updateButtonStatesAndTooltips(self):
         self.ui.PediatricAirwayAtlasDirectory.toolTip = "Root directory for source code"
         if os.path.isdir(self.ui.PediatricAirwayAtlasDirectory.currentPath):
             self.ui.linkPediatricAirwayAtlasButton.toolTip = (
@@ -324,9 +273,7 @@ class VPAWModelWidget(
         if os.path.isdir(self.ui.VPAWRootDirectory.currentPath) and os.path.isdir(
             self.ui.VPAWModelsDirectory.currentPath
         ):
-            self.ui.runPediatricAirwayAtlasButton.toolTip = (
-                "Run Pediatric Airway Atlas (This may take many hours)"
-            )
+            self.ui.runPediatricAirwayAtlasButton.toolTip = "Run Pediatric Airway Atlas"
             self.ui.runPediatricAirwayAtlasButton.enabled = True
         else:
             self.ui.runPediatricAirwayAtlasButton.toolTip = (
@@ -335,34 +282,46 @@ class VPAWModelWidget(
             )
             self.ui.runPediatricAirwayAtlasButton.enabled = False
 
-        # All the GUI updates are done
-        self._updatingGUIFromParameterNode = False
+    def setOrRemoveQSetting(self, qsettings, key, value):
+        # We can keep the operating system's "registry" cleaner by removing the key
+        # entirely when its value is None or "".
+        if value is not None and value != "":
+            qsettings.setValue(key, value)
+        else:
+            qsettings.remove(key)
 
-    def updateParameterNodeFromGUI(self, caller=None, event=None):
+    def updateQSettingsFromGUI(self, caller=None, event=None):
         """
         This method is called when the user makes any change in the GUI.  The changes
-        are saved into the parameter node (so that they are restored when the scene is
-        saved and loaded).
+        are saved into the QSettomgs (so that they are restored when the application is
+        restarted).
         """
-        if self._parameterNode is None or self._updatingGUIFromParameterNode:
+
+        # If we got called to update QSettings because we updated the GUI from
+        # QSettings, then there's nothing more to do.  (Infinite loops are a drag.)
+        if self._updatingGUIFromQSettings:
             return
 
-        # Modify all properties in a single batch
-        wasModified = self._parameterNode.StartModify()
-
-        self._parameterNode.SetParameter(
+        qsettings = qt.QSettings()
+        qsettings.beginGroup("VPAWModel")
+        self.setOrRemoveQSetting(
+            qsettings,
             "PediatricAirwayAtlasDirectory",
             self.ui.PediatricAirwayAtlasDirectory.currentPath,
         )
-        self._parameterNode.SetParameter(
-            "VPAWRootDirectory", self.ui.VPAWRootDirectory.currentPath
+        self.setOrRemoveQSetting(
+            qsettings, "VPAWRootDirectory", self.ui.VPAWRootDirectory.currentPath
         )
-        self._parameterNode.SetParameter(
-            "VPAWModelsDirectory", self.ui.VPAWModelsDirectory.currentPath
+        self.setOrRemoveQSetting(
+            qsettings, "VPAWModelsDirectory", self.ui.VPAWModelsDirectory.currentPath
         )
-        self._parameterNode.SetParameter("PatientPrefix", self.ui.PatientPrefix.text)
+        qsettings.endGroup()
 
-        self._parameterNode.EndModify(wasModified)
+        # Because the widgets' form inputs have changed, we should update other widgets
+        # and properties too.
+        self._updatingGUIFromQSettings = True
+        self.updateButtonStatesAndTooltips()
+        self._updatingGUIFromQSettings = False
 
     def onHomeButton(self):
         """
@@ -376,7 +335,7 @@ class VPAWModelWidget(
         """
         slicer.util.selectModule("VPAWVisualize")
 
-    def onInstallPediatricAirwayAtlasButton(self):
+    def onLinkPediatricAirwayAtlasButton(self):
         """
         Install the Pediatric Airway Atlas source code and its dependencies at the
         user's request.
@@ -392,6 +351,8 @@ class VPAWModelWidget(
         """
         Parameters
         ----------
+        PediatricAirwayAtlasDirectory :
+            This is the directory containing the source code for pediatric_airway_atlas.
         VPAWRootDirectory :
             This is the input/output directory, e.g., "path/to/vpaw-data-root".  It must
             contain FilteredControlBlindingLogUniqueScanFiltered.xls, images/*, and
@@ -407,6 +368,7 @@ class VPAWModelWidget(
             "Failed to compute results.", waitCursor=True
         ):
             self.logic.runPediatricAirwayAtlas(
+                self.ui.PediatricAirwayAtlasDirectory.currentPath,
                 self.ui.VPAWRootDirectory.currentPath,
                 self.ui.VPAWModelsDirectory.currentPath,
                 self.ui.PatientPrefix.text,
@@ -471,7 +433,7 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
 
     def setDefaultParameters(self, parameterNode):
         """
-        Initialize parameter node with default settings.
+        Initialize with default settings.
         """
         pass
 
@@ -479,9 +441,11 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
         startTime = time.time()
         logging.info("Pediatric Airway Atlas installation started")
 
-        if self.installAndImportDependencies() and self.ensureModulePath(
+        response = self.installAndImportDependencies() and self.ensureModulePath(
             pediatricAirwayAtlasDirectory
-        ):
+        )
+
+        if response:
             # No error messages have been sent to the user, so let's assure the user
             # that something useful has happened.
             slicer.util.infoDisplay("Pediatric Airway Atlas is linked", "Linked")
@@ -491,6 +455,7 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
             f"Pediatric Airway Atlas installation completed in {stopTime-startTime:.2f}"
             + " seconds"
         )
+        return response
 
     def ensureModulePath(self, directory):
         self.pediatric_airway_atlas_directory = str(pathlib.Path(directory))
@@ -538,7 +503,7 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
             want_install = slicer.util.confirmYesNoDisplay(
                 f"Package{plural} not found: "
                 + ", ".join([module_name for module_name, _ in needs_installation])
-                + f"\nInstall the package{plural}?  (This may take a while)",
+                + f"\nInstall the package{plural}?",
                 "Missing Dependencies" if plural == "s" else "Missing Dependency",
             )
             if not want_install:
@@ -579,7 +544,11 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
         return True
 
     def runPediatricAirwayAtlas(
-        self, vPAWRootDirectory, vPAWModelsDirectory, patientPrefix
+        self,
+        pediatricAirwayAtlasDirectory,
+        vPAWRootDirectory,
+        vPAWModelsDirectory,
+        patientPrefix,
     ):
         """
         Run the Pediatric Airway Atlas pipeline.
@@ -587,6 +556,8 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
 
         Parameters
         ----------
+        pediatricAirwayAtlasDirectory : str
+            This is the directory containing the source code for pediatric_airway_atlas.
         vPAWRootDirectory : str
             This is the input/output directory, e.g., "path/to/vpaw-data-root".  It must
             contain FilteredControlBlindingLogUniqueScanFiltered.xls, images/*, and
@@ -596,15 +567,25 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
         patientPrefix : str
             Process only files with this prefix.  Blank means all files.
         """
+
+        # If self.pediatric_airway_atlas is not yet set, then see if we can set it.
+        if not hasattr(self, "pediatric_airway_atlas_directory") and not (
+            os.path.isdir(pediatricAirwayAtlasDirectory)
+            and self.linkPediatricAirwayAtlas(pediatricAirwayAtlasDirectory)
+        ):
+            # We don't have self.pediatric_airway_atlas and we couldn't get it.
+            return False
+
         startTime = time.time()
         logging.info("Pediatric Airway Atlas pipeline started")
 
         # self.convertCTScansToNRRD(vPAWRootDirectory)
-        if self.convertFCSVLandmarksToP3(
+        response = self.convertFCSVLandmarksToP3(
             vPAWRootDirectory, patientPrefix
         ) and self.runSegmentation(
             vPAWRootDirectory, vPAWModelsDirectory, patientPrefix
-        ):
+        )
+        if response:
             slicer.util.infoDisplay("The pipeline has completed", "Pipeline ran")
 
         stopTime = time.time()
@@ -612,6 +593,7 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
             f"Pediatric Airway Atlas pipeline completed in {stopTime-startTime:.2f}"
             + " seconds"
         )
+        return response
 
     def convertFCSVLandmarksToP3(self, vPAWRootDirectory, patientPrefix):
         cwd = os.getcwd()
