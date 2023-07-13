@@ -71,9 +71,8 @@ class VPAWVisualize(slicer.ScriptedLoadableModule.ScriptedLoadableModule):
         slicer.ScriptedLoadableModule.ScriptedLoadableModule.__init__(self, parent)
         self.parent.title = "VPAW Visualize"
         self.parent.categories = ["VPAW"]
-        self.parent.dependencies = (
-            []
-        )  # TODO: add here list of module names that this module requires
+        # TODO: add here list of module names that this module requires
+        self.parent.dependencies = []
         self.parent.contributors = [
             "Andinet Enquobahrie (Kitware, Inc.)",
             "Shreeraj Jadhav (Kitware, Inc.)",
@@ -148,15 +147,15 @@ class VPAWVisualizeWidget(
         """
         slicer.ScriptedLoadableModule.ScriptedLoadableModuleWidget.setup(self)
 
-        # Load widget from .ui file (created by Qt Designer).
-        # Additional widgets can be instantiated manually and added to self.layout.
+        # Load widget from .ui file (created by Qt Designer).  Additional widgets can be
+        # instantiated manually and added to self.layout.
         uiWidget = slicer.util.loadUI(self.resourcePath("UI/VPAWVisualize.ui"))
         self.layout.addWidget(uiWidget)
         self.ui = slicer.util.childWidgetVariables(uiWidget)
 
-        # Set scene in MRML widgets. Make sure that in Qt designer the top-level
+        # Set scene in MRML widgets.  Make sure that in Qt designer the top-level
         # qMRMLWidget's "mrmlSceneChanged(vtkMRMLScene*)" signal in is connected to each
-        # MRML widget's.  "setMRMLScene(vtkMRMLScene*)" slot.
+        # MRML widget's "setMRMLScene(vtkMRMLScene*)" slot.
         uiWidget.setMRMLScene(slicer.mrmlScene)
 
         # Configure 3D view
@@ -169,7 +168,7 @@ class VPAWVisualizeWidget(
             slicer.vtkMRMLAbstractViewNode.OrientationMarkerTypeAxes
         )
 
-        # Create logic class. Logic implements all computations that should be possible
+        # Create logic class.  Logic implements all computations that should be possible
         # to run in batch mode, without a graphical user interface.
         self.logic = VPAWVisualizeLogic()
 
@@ -269,7 +268,7 @@ class VPAWVisualizeWidget(
         Ensure parameter node exists and observed.
         """
         # Parameter node stores all user choices in parameter values, node selections,
-        # etc.  so that when the scene is saved and reloaded, these settings are
+        # etc. so that when the scene is saved and reloaded, these settings are
         # restored.
 
         self.setParameterNode(self.logic.getParameterNode())
@@ -360,9 +359,8 @@ class VPAWVisualizeWidget(
         if self._parameterNode is None or self._updatingGUIFromParameterNode:
             return
 
-        wasModified = (
-            self._parameterNode.StartModify()
-        )  # Modify all properties in a single batch
+        # Modify all properties in a single batch
+        wasModified = self._parameterNode.StartModify()
 
         self._parameterNode.SetParameter(
             "DataDirectory", self.ui.DataDirectory.currentPath
@@ -424,24 +422,23 @@ class VPAWVisualizeWidget(
             waitCursor=True,
         ):
             try:
-                self.ui.computeIsosurfacesStackedWidget.setCurrentIndex(
-                    1
-                )  # show progress bar
+                # show progress bar
+                self.ui.computeIsosurfacesStackedWidget.setCurrentIndex(1)
 
                 def progress_callback(progress_percentage):
                     self.ui.computeIsosurfacesProgressBar.setValue(progress_percentage)
 
                 progress_callback(0)
-                # I found the following processEvents call was needed to get the widget to visually
-                # repaint before the progress increases in the computation. -E
+                # I found the following processEvents call was needed to get the widget
+                # to visually repaint before the progress increases in the
+                # computation.  -E
                 slicer.app.processEvents()
                 self.logic.compute_isosurfaces(
                     self.ui.numberOfIsosurfaceValues.value, progress_callback
                 )
             finally:
-                self.ui.computeIsosurfacesStackedWidget.setCurrentIndex(
-                    0
-                )  # revert to showing button
+                # revert to showing button
+                self.ui.computeIsosurfacesStackedWidget.setCurrentIndex(0)
                 self.updateComputeIsosurfacesButtonEnabledness()
 
     def onSegmentationOpacitySliderValueChanged(self, value: int):
@@ -486,8 +483,8 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
 
     def __init__(self):
         """
-        Called when the logic class is instantiated. Can be used for initializing member
-        variables.
+        Called when the logic class is instantiated.  Can be used for initializing
+        member variables.
         """
         slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic.__init__(self)
         self.clearSubject()
@@ -639,8 +636,8 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
 
         Parameters
         ----------
-        contents : a pair of arrays (centerline_points, centerline_normals). Currently we only use
-            centerline_points, piecing them together into a curve node.
+        contents : a pair of arrays (centerline_points, centerline_normals).  Currently
+            we only use centerline_points, piecing them together into a curve node.
 
         Returns
         -------
@@ -658,10 +655,10 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         )
         centerline_node.GetDisplayNode().SetGlyphTypeFromString("Vertex2D")
         centerline_node.SetCurveTypeToLinear()
-        centerline_node.LockedOn()  # don't allow mouse interaction to move control points
-        centerline_node.GetDisplayNode().SetPropertiesLabelVisibility(
-            False
-        )  # hide the text label because it distracts from landmarks
+        # don't allow mouse interaction to move control points
+        centerline_node.LockedOn()
+        # hide the text label because it distracts from landmarks
+        centerline_node.GetDisplayNode().SetPropertiesLabelVisibility(False)
         return centerline_node
 
     def loadOneNode(self, filename, basename_repr, props):
@@ -723,9 +720,8 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         the subject hierarchy.
         """
         self.subject_id = None
-        self.subject_item_id = (
-            None  # subject hierarchy item id for the currently loaded subject
-        )
+        # subject hierarchy item id for the currently loaded subject
+        self.subject_item_id = None
         self.input_image_node = None
         self.input_ijk_to_ras = None
         self.centerline_node = None
@@ -878,7 +874,7 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
     def fix_image_origins_and_spacings(self):
         """
         Some nodes rely on others for origin and spacing info, because it wasn't
-        properly saved in the files from which we generate those nodes. This functions
+        properly saved in the files from which we generate those nodes.  This functions
         goes through and transfers origin and spacing info whereever it is needed.
         """
         if self.laplace_sol_node is None:
@@ -898,7 +894,7 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
     def restrict_laplace_sol_to_segmentation(self):
         """
         If the laplace solution and the segmentation node both exist, mask the laplace
-        solution volume by the segmentation node. If either of them doesn't exists,
+        solution volume by the segmentation node.  If either of them doesn't exists,
         raise an exception.
         """
         if self.segmentation_node is None:
@@ -971,8 +967,9 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
             raise RuntimeError("Could not find a loaded Laplace solution image")
         if self.laplace_sol_masked_node is None:
             raise RuntimeError(
-                "No masked Laplace solution was found; there should be a volume node consisting of"
-                " the Laplace solution restricted to the airway segmentation."
+                "No masked Laplace solution was found; there should be a volume node"
+                " consisting of the Laplace solution restricted to the airway"
+                " segmentation."
             )
 
         isosurface_values = np.linspace(0, 1, num_isosurface_values)

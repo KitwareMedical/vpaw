@@ -5,17 +5,18 @@ import slicer
 def isosurfaces_from_volume(
     vol_node, thresholds, decimate_target_reduction=0.25, progress_callback=None
 ):
-    """Compute a model node consisting of isosurfaces from the given volume node.
-    Uses vtkFlyingEdges3D to generate isosurface mesh.
+    """
+    Compute a model node consisting of isosurfaces from the given volume node.  Uses
+    vtkFlyingEdges3D to generate isosurface mesh.
 
     Args:
         vol_node: a vtkMRMLScalarVolumeNode
-        thresholds: a sequence of floats; values at which to threshold the scalar volume. each value
-            should result in one isosurface
+        thresholds: a sequence of floats; values at which to threshold the scalar
+            volume.  Each value should result in one isosurface
         decimate_target_reduction: by how much to decimate after doing vtkFlyingEdges3D
-        progress_callback: Optionally, a function that takes a progress_percentage float value.
-            If this is provided then progress_callback(progress_percentage) will be called
-            while the computation is being done.
+        progress_callback: Optionally, a function that takes a progress_percentage float
+            value.  If this is provided then progress_callback(progress_percentage) will
+            be called while the computation is being done.
     Return: a vtkMRMLModelNode
     """
 

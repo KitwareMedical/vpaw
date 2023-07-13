@@ -15,7 +15,7 @@ import yaml
 
 class BusyCursor:
     """
-    Context manager for showing a busy cursor. Ensures that cursor reverts to normal in
+    Context manager for showing a busy cursor.  Ensures that cursor reverts to normal in
     case of an exception.
     """
 
@@ -33,7 +33,8 @@ class BusyCursor:
 
 
 class VPAWModel(slicer.ScriptedLoadableModule.ScriptedLoadableModule):
-    """Uses ScriptedLoadableModule base class, available at:
+    """
+    Uses ScriptedLoadableModule base class, available at:
     https://github.com/Slicer/Slicer/blob/main/Base/Python/slicer/ScriptedLoadableModule.py
     """
 
@@ -41,9 +42,8 @@ class VPAWModel(slicer.ScriptedLoadableModule.ScriptedLoadableModule):
         slicer.ScriptedLoadableModule.ScriptedLoadableModule.__init__(self, parent)
         self.parent.title = "VPAW Model"
         self.parent.categories = ["VPAW"]
-        self.parent.dependencies = (
-            []
-        )  # TODO: add here list of module names that this module requires
+        # TODO: add here list of module names that this module requires
+        self.parent.dependencies = []
         self.parent.contributors = [
             "Andinet Enquobahrie (Kitware, Inc.)",
             "Shreeraj Jadhav (Kitware, Inc.)",
@@ -92,7 +92,8 @@ class VPAWModelWidget(
     slicer.ScriptedLoadableModule.ScriptedLoadableModuleWidget,
     slicer.util.VTKObservationMixin,
 ):
-    """Uses ScriptedLoadableModuleWidget base class, available at:
+    """
+    Uses ScriptedLoadableModuleWidget base class, available at:
     https://github.com/Slicer/Slicer/blob/main/Base/Python/slicer/ScriptedLoadableModule.py
     """
 
@@ -123,9 +124,9 @@ class VPAWModelWidget(
         self.layout.addWidget(uiWidget)
         self.ui = slicer.util.childWidgetVariables(uiWidget)
 
-        # Set scene in MRML widgets. Make sure that in Qt designer the top-level
+        # Set scene in MRML widgets.  Make sure that in Qt designer the top-level
         # qMRMLWidget's "mrmlSceneChanged(vtkMRMLScene*)" signal in is connected to each
-        # MRML widget's.  "setMRMLScene(vtkMRMLScene*)" slot.
+        # MRML widget's "setMRMLScene(vtkMRMLScene*)" slot.
         uiWidget.setMRMLScene(slicer.mrmlScene)
 
         # Configure 3D view
@@ -138,7 +139,7 @@ class VPAWModelWidget(
             slicer.vtkMRMLAbstractViewNode.OrientationMarkerTypeAxes
         )
 
-        # Create logic class. Logic implements all computations that should be possible
+        # Create logic class.  Logic implements all computations that should be possible
         # to run in batch mode, without a graphical user interface.
         self.logic = VPAWModelLogic()
 
@@ -235,7 +236,7 @@ class VPAWModelWidget(
         Ensure parameter node exists and observed.
         """
         # Parameter node stores all user choices in parameter values, node selections,
-        # etc.  so that when the scene is saved and reloaded, these settings are
+        # etc. so that when the scene is saved and reloaded, these settings are
         # restored.
 
         self.setParameterNode(self.logic.getParameterNode())
@@ -347,9 +348,8 @@ class VPAWModelWidget(
         if self._parameterNode is None or self._updatingGUIFromParameterNode:
             return
 
-        wasModified = (
-            self._parameterNode.StartModify()
-        )  # Modify all properties in a single batch
+        # Modify all properties in a single batch
+        wasModified = self._parameterNode.StartModify()
 
         self._parameterNode.SetParameter(
             "PediatricAirwayAtlasDirectory",
@@ -430,8 +430,8 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
 
     def __init__(self):
         """
-        Called when the logic class is instantiated. Can be used for initializing member
-        variables.
+        Called when the logic class is instantiated.  Can be used for initializing
+        member variables.
         """
         slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic.__init__(self)
 
@@ -633,7 +633,7 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
                 )
             except:
                 slicer.util.errorDisplay(
-                    "The run failed. It may be that a non-blank patient prefix is not"
+                    "The run failed.  It may be that a non-blank patient prefix is not"
                     + " supported by this version of pediatric_airway_atlas"
                     + ".conversion_utils.generate_pixel_space_landmarks"
                     + ".convert_landmarks."
@@ -743,7 +743,7 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
                     )
                 except:
                     slicer.util.errorDisplay(
-                        "The run failed. It may be that a non-blank patient prefix is"
+                        "The run failed.  It may be that a non-blank patient prefix is"
                         + " not supported by this version of pediatric_airway_atlas"
                         + ".atlas_builder_configurable."
                         + " Please update pediatric_airway_atlas and try again.",
@@ -786,8 +786,10 @@ class VPAWModelTest(slicer.ScriptedLoadableModule.ScriptedLoadableModuleTest):
     """
 
     def setUp(self):
-        """Do whatever is needed to reset the state - typically a scene clear will be
-        enough."""
+        """
+        Do whatever is needed to reset the state - typically a scene clear will be
+        enough.
+        """
         slicer.mrmlScene.Clear()
 
     def runTest(self):
