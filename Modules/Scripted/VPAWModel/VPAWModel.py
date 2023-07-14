@@ -297,8 +297,8 @@ class VPAWModelWidget(
         restarted).
         """
 
-        # If we got called to update QSettings because we updated the GUI from
-        # QSettings, then there's nothing more to do.  (Infinite loops are a drag.)
+        # If we got called to update QSettings because we updated the GUI from QSettings
+        # then there's nothing more to do.  (Infinite loops are a drag.)
         if self._updatingGUIFromQSettings:
             return
 
@@ -568,7 +568,7 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
             Process only files with this prefix.  Blank means all files.
         """
 
-        # If self.pediatric_airway_atlas is not yet set, then see if we can set it.
+        # If self.pediatric_airway_atlas is not yet set then see if we can set it.
         if not hasattr(self, "pediatric_airway_atlas_directory") and not (
             os.path.isdir(pediatricAirwayAtlasDirectory)
             and self.linkPediatricAirwayAtlas(pediatricAirwayAtlasDirectory)
@@ -624,7 +624,9 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
                         "The run failed.  It may be that a non-blank patient prefix is"
                         + " not supported by this version of pediatric_airway_atlas"
                         + ".conversion_utils.generate_pixel_space_landmarks."
-                        + "  Please update pediatric_airway_atlas and try again.",
+                        + "  Please update pediatric_airway_atlas and try again."
+                        + "  Alternatively, it may be that you entered a patient prefix"
+                        + " that does not exist.",
                         "Run Error",
                     )
                     return False
@@ -745,7 +747,9 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
                         "The run failed.  It may be that a non-blank patient prefix is"
                         + " not supported by this version of pediatric_airway_atlas"
                         + ".atlas_builder_configurable."
-                        + " Please update pediatric_airway_atlas and try again.",
+                        + "  Please update pediatric_airway_atlas and try again."
+                        + "  Alternatively, it may be that you entered a patient prefix"
+                        + " that does not exist.",
                         "Run Error",
                     )
                     return False
