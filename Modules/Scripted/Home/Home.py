@@ -8,7 +8,8 @@ import slicer.util
 
 
 class Home(slicer.ScriptedLoadableModule.ScriptedLoadableModule):
-    """Uses ScriptedLoadableModule base class, available at:
+    """
+    Uses ScriptedLoadableModule base class, available at:
     https://github.com/Slicer/Slicer/blob/main/Base/Python/slicer/ScriptedLoadableModule.py
     """
 
@@ -31,7 +32,8 @@ class HomeWidget(
     slicer.ScriptedLoadableModule.ScriptedLoadableModuleWidget,
     slicer.util.VTKObservationMixin,
 ):
-    """Uses ScriptedLoadableModuleWidget base class, available at:
+    """
+    Uses ScriptedLoadableModuleWidget base class, available at:
     https://github.com/Slicer/Slicer/blob/main/Base/Python/slicer/ScriptedLoadableModule.py
     """
 
@@ -168,12 +170,11 @@ class HomeWidget(
 
 
 class HomeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
-    """This class should implement all the actual
-    computation done by your module.  The interface
-    should be such that other python code can import
-    this class and make use of the functionality without
-    requiring an instance of the Widget.
-    Uses ScriptedLoadableModuleLogic base class, available at:
+    """
+    This class should implement all the actual computation done by your module.  The
+    interface should be such that other python code can import this class and make use
+    of the functionality without requiring an instance of the Widget.  Uses
+    ScriptedLoadableModuleLogic base class, available at:
     https://github.com/Slicer/Slicer/blob/main/Base/Python/slicer/ScriptedLoadableModule.py
     """
 
@@ -185,9 +186,9 @@ class HomeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
         pass
 
     def exitApplication(self, status=slicer.util.EXIT_SUCCESS, message=None):
-        """Exit application.
-        If ``status`` is ``slicer.util.EXIT_SUCCESS``, ``message`` is logged using
-        ``logging.info(message)`` otherwise it is logged using
+        """
+        Exit application.  If ``status`` is ``slicer.util.EXIT_SUCCESS``, ``message`` is
+        logged using ``logging.info(message)`` otherwise it is logged using
         ``logging.error(message)``.
         """
 
@@ -254,8 +255,10 @@ class HomeTest(slicer.ScriptedLoadableModule.ScriptedLoadableModuleTest):
     """
 
     def setUp(self):
-        """Do whatever is needed to reset the state - typically a scene clear will be
-        enough."""
+        """
+        Do whatever is needed to reset the state - typically a scene clear will be
+        enough.
+        """
         slicer.mrmlScene.Clear(0)
 
     def runTest(self):
@@ -264,15 +267,16 @@ class HomeTest(slicer.ScriptedLoadableModule.ScriptedLoadableModuleTest):
         self.test_Home1()
 
     def test_Home1(self):
-        """Ideally you should have several levels of tests.  At the lowest level
-        tests should exercise the functionality of the logic with different inputs
-        (both valid and invalid).  At higher levels your tests should emulate the
-        way the user would interact with your code and confirm that it still works
-        the way you intended.
+        """
+        Ideally you should have several levels of tests.  At the lowest level tests
+        should exercise the functionality of the logic with different inputs (both valid
+        and invalid).  At higher levels your tests should emulate the way the user would
+        interact with your code and confirm that it still works the way you intended.
+
         One of the most important features of the tests is that it should alert other
         developers when their changes will have an impact on the behavior of your
-        module.  For example, if a developer removes a feature that you depend on,
-        your test should break so they know that the feature is needed.
+        module.  For example, if a developer removes a feature that you depend on, your
+        test should break so they know that the feature is needed.
         """
 
         self.delayDisplay("Starting the test")

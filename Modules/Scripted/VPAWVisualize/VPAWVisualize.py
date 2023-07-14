@@ -25,7 +25,6 @@ def summary_repr(contents):
     -------
     A string representation of a summary of the object
     """
-
     if isinstance(contents, list):
         return "[" + ", ".join([summary_repr(elem) for elem in contents]) + "]"
     elif isinstance(contents, tuple):
@@ -45,7 +44,10 @@ def summary_repr(contents):
             + "}"
         )
     elif isinstance(contents, set):
-        return "{" + ", ".join([summary_repr(elem) for elem in contents]) + "}"
+        if len(contents) == 0:
+            return repr(set())
+        else:
+            return "{" + ", ".join([summary_repr(elem) for elem in contents]) + "}"
     elif isinstance(contents, (int, float, np.float32, np.float64, bool, str)):
         return repr(contents)
     elif isinstance(contents, np.ndarray):
@@ -69,9 +71,8 @@ class VPAWVisualize(slicer.ScriptedLoadableModule.ScriptedLoadableModule):
         slicer.ScriptedLoadableModule.ScriptedLoadableModule.__init__(self, parent)
         self.parent.title = "VPAW Visualize"
         self.parent.categories = ["VPAW"]
-        self.parent.dependencies = (
-            []
-        )  # TODO: add here list of module names that this module requires
+        # TODO: add here list of module names that this module requires
+        self.parent.dependencies = []
         self.parent.contributors = [
             "Andinet Enquobahrie (Kitware, Inc.)",
             "Shreeraj Jadhav (Kitware, Inc.)",
@@ -91,7 +92,6 @@ This file was built from template originally developed by Jean-Christophe Fillio
 Kitware Inc., Andras Lasso, PerkLab, and Steve Pieper, Isomics, Inc. and was partially
 funded by NIH grant 3P41RR013218-12S1.
 """
-
         # Additional initialization step after application startup is complete
         slicer.app.connect("startupCompleted()", registerSampleData)
 
@@ -105,7 +105,6 @@ def registerSampleData():
     """
     Add data sets to Sample Data module.
     """
-
     # It is always recommended to provide sample data for users to make it easy to try
     # the module, but if no sample data is available then this method (and associated
     # startupCompeted signal connection) can be removed.
@@ -132,7 +131,6 @@ class VPAWVisualizeWidget(
         Called when the user opens the module the first time and the widget is
         initialized.
         """
-
         slicer.ScriptedLoadableModule.ScriptedLoadableModuleWidget.__init__(
             self, parent
         )
@@ -147,18 +145,17 @@ class VPAWVisualizeWidget(
         Called when the user opens the module the first time and the widget is
         initialized.
         """
-
         slicer.ScriptedLoadableModule.ScriptedLoadableModuleWidget.setup(self)
 
-        # Load widget from .ui file (created by Qt Designer).
-        # Additional widgets can be instantiated manually and added to self.layout.
+        # Load widget from .ui file (created by Qt Designer).  Additional widgets can be
+        # instantiated manually and added to self.layout.
         uiWidget = slicer.util.loadUI(self.resourcePath("UI/VPAWVisualize.ui"))
         self.layout.addWidget(uiWidget)
         self.ui = slicer.util.childWidgetVariables(uiWidget)
 
-        # Set scene in MRML widgets. Make sure that in Qt designer the top-level
+        # Set scene in MRML widgets.  Make sure that in Qt designer the top-level
         # qMRMLWidget's "mrmlSceneChanged(vtkMRMLScene*)" signal in is connected to each
-        # MRML widget's.  "setMRMLScene(vtkMRMLScene*)" slot.
+        # MRML widget's "setMRMLScene(vtkMRMLScene*)" slot.
         uiWidget.setMRMLScene(slicer.mrmlScene)
 
         # Configure 3D view
@@ -171,7 +168,7 @@ class VPAWVisualizeWidget(
             slicer.vtkMRMLAbstractViewNode.OrientationMarkerTypeAxes
         )
 
-        # Create logic class. Logic implements all computations that should be possible
+        # Create logic class.  Logic implements all computations that should be possible
         # to run in batch mode, without a graphical user interface.
         self.logic = VPAWVisualizeLogic()
 
@@ -193,6 +190,9 @@ class VPAWVisualizeWidget(
         self.ui.PatientPrefix.connect(
             "textChanged(const QString&)", self.updateParameterNodeFromGUI
         )
+        self.ui.DataDirectory.connect(
+            "validInputChanged(bool)", self.updateParameterNodeFromGUI
+        )
 
         # Buttons
         self.ui.HomeButton.connect("clicked(bool)", self.onHomeButton)
@@ -202,6 +202,8 @@ class VPAWVisualizeWidget(
             "clicked(bool)", self.onComputeIsosurfacesButton
         )
         self.updateComputeIsosurfacesButtonEnabledness()
+
+        # Sliders
         self.ui.segmentationOpacitySlider.connect(
             "valueChanged(int)", self.onSegmentationOpacitySliderValueChanged
         )
@@ -221,14 +223,12 @@ class VPAWVisualizeWidget(
         """
         Called when the application closes and the module widget is destroyed.
         """
-
         self.removeObservers()
 
     def enter(self):
         """
         Called each time the user opens this module.
         """
-
         # Make sure parameter node exists and observed
         self.initializeParameterNode()
 
@@ -236,7 +236,6 @@ class VPAWVisualizeWidget(
         """
         Called each time the user opens a different module.
         """
-
         # Do not react to parameter node changes (GUI wlil be updated when the user
         # enters into the module)
         self.removeObserver(
@@ -249,7 +248,6 @@ class VPAWVisualizeWidget(
         """
         Called just before the scene is closed.
         """
-
         # Parameter node will be reset, do not use it anymore
         self.setParameterNode(None)
 
@@ -257,7 +255,6 @@ class VPAWVisualizeWidget(
         """
         Called just after the scene is closed.
         """
-
         # If this module is shown while the scene is closed then recreate a new
         # parameter node immediately
         if self.parent.isEntered:
@@ -267,9 +264,8 @@ class VPAWVisualizeWidget(
         """
         Ensure parameter node exists and observed.
         """
-
         # Parameter node stores all user choices in parameter values, node selections,
-        # etc.  so that when the scene is saved and reloaded, these settings are
+        # etc. so that when the scene is saved and reloaded, these settings are
         # restored.
 
         self.setParameterNode(self.logic.getParameterNode())
@@ -279,7 +275,6 @@ class VPAWVisualizeWidget(
         Set and observe parameter node.  Observation is needed because when the
         parameter node is changed then the GUI must be updated immediately.
         """
-
         if inputParameterNode:
             self.logic.setDefaultParameters(inputParameterNode)
 
@@ -287,7 +282,11 @@ class VPAWVisualizeWidget(
         # selected.  Changes of parameter node are observed so that whenever parameters
         # are changed by a script or any other module those are reflected immediately in
         # the GUI.
-        if self._parameterNode is not None:
+        if self._parameterNode is not None and self.hasObserver(
+            self._parameterNode,
+            vtk.vtkCommand.ModifiedEvent,
+            self.updateGUIFromParameterNode,
+        ):
             self.removeObserver(
                 self._parameterNode,
                 vtk.vtkCommand.ModifiedEvent,
@@ -306,10 +305,9 @@ class VPAWVisualizeWidget(
 
     def updateGUIFromParameterNode(self, caller=None, event=None):
         """
-        This method is called whenever parameter node is changed.
-        The module GUI is updated to show the current state of the parameter node.
+        This method is called whenever parameter node is changed.  The module GUI is
+        updated to show the current state of the parameter node.
         """
-
         if self._parameterNode is None or self._updatingGUIFromParameterNode:
             return
 
@@ -355,13 +353,11 @@ class VPAWVisualizeWidget(
         are saved into the parameter node (so that they are restored when the scene is
         saved and loaded).
         """
-
         if self._parameterNode is None or self._updatingGUIFromParameterNode:
             return
 
-        wasModified = (
-            self._parameterNode.StartModify()
-        )  # Modify all properties in a single batch
+        # Modify all properties in a single batch
+        wasModified = self._parameterNode.StartModify()
 
         self._parameterNode.SetParameter(
             "DataDirectory", self.ui.DataDirectory.currentPath
@@ -372,21 +368,21 @@ class VPAWVisualizeWidget(
 
     @vtk.calldata_type(vtk.VTK_LONG)
     def shItemModifiedEvent(self, caller, eventId, callData):
-        """Callback for when a subject hierarchy item is modified."""
+        """
+        Callback for when a subject hierarchy item is modified.
+        """
         qt.QTimer.singleShot(2000, self.updateComputeIsosurfacesButtonEnabledness)
 
     def onHomeButton(self):
         """
         Switch to the "Home" module when the user clicks the button.
         """
-
         slicer.util.selectModule("Home")
 
     def onVPAWModelButton(self):
         """
         Switch to the "VPAW Model" module when the user clicks the button.
         """
-
         slicer.util.selectModule("VPAWModel")
 
     def onShowButton(self):
@@ -394,7 +390,6 @@ class VPAWVisualizeWidget(
         When the user clicks the Show button, find the requested files and load them in
         to 3D Slicer's subject hierarchy.
         """
-
         with slicer.util.tryWithErrorDisplay(
             "Failed to show patient data.", waitCursor=True
         ):
@@ -419,30 +414,28 @@ class VPAWVisualizeWidget(
         """
         Compute isosurfaces of the laplace sol'n image
         """
-
         with slicer.util.tryWithErrorDisplay(
             "Unable to compute isosurfaces; see exception message below.",
             waitCursor=True,
         ):
             try:
-                self.ui.computeIsosurfacesStackedWidget.setCurrentIndex(
-                    1
-                )  # show progress bar
+                # show progress bar
+                self.ui.computeIsosurfacesStackedWidget.setCurrentIndex(1)
 
                 def progress_callback(progress_percentage):
                     self.ui.computeIsosurfacesProgressBar.setValue(progress_percentage)
 
                 progress_callback(0)
-                # I found the following processEvents call was needed to get the widget to visually
-                # repaint before the progress increases in the computation. -E
+                # I found the following processEvents call was needed to get the widget
+                # to visually repaint before the progress increases in the
+                # computation.  -E
                 slicer.app.processEvents()
                 self.logic.compute_isosurfaces(
                     self.ui.numberOfIsosurfaceValues.value, progress_callback
                 )
             finally:
-                self.ui.computeIsosurfacesStackedWidget.setCurrentIndex(
-                    0
-                )  # revert to showing button
+                # revert to showing button
+                self.ui.computeIsosurfacesStackedWidget.setCurrentIndex(0)
                 self.updateComputeIsosurfacesButtonEnabledness()
 
     def onSegmentationOpacitySliderValueChanged(self, value: int):
@@ -451,7 +444,10 @@ class VPAWVisualizeWidget(
         )
 
     def updateComputeIsosurfacesButtonEnabledness(self):
-        """Enable or disable the compute isosurfaces button based on state of the VPAWVisualizeLogic"""
+        """
+        Enable or disable the compute isosurfaces button based on state of the
+        VPAWVisualizeLogic
+        """
         if not self.logic.subjectIsCurrentlyLoaded():
             self.ui.computeIsosurfacesButton.setEnabled(False)
             self.ui.computeIsosurfacesButton.setToolTip("Load a subject to enable this")
@@ -474,19 +470,19 @@ class VPAWVisualizeWidget(
 
 
 class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
-    """This class should implement all the actual computation done by your module.  The
+    """
+    This class should implement all the actual computation done by your module.  The
     interface should be such that other python code can import this class and make use
-    of the functionality without requiring an instance of the Widget.
-    Uses ScriptedLoadableModuleLogic base class, available at:
+    of the functionality without requiring an instance of the Widget.  Uses
+    ScriptedLoadableModuleLogic base class, available at:
     https://github.com/Slicer/Slicer/blob/main/Base/Python/slicer/ScriptedLoadableModule.py
     """
 
     def __init__(self):
         """
-        Called when the logic class is instantiated. Can be used for initializing member
-        variables.
+        Called when the logic class is instantiated.  Can be used for initializing
+        member variables.
         """
-
         slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic.__init__(self)
         self.clearSubject()
 
@@ -494,7 +490,6 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         """
         Initialize parameter node with default settings.
         """
-
         if not parameterNode.GetParameter("Threshold"):
             parameterNode.SetParameter("Threshold", "100.0")
         if not parameterNode.GetParameter("Invert"):
@@ -526,7 +521,6 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         When `path` is a directory, returns the concatenation of the lists generated by
             a recursive call to find_files_with_prefix for each entry in the directory.
         """
-
         if os.path.isdir(path):
             # This `path` is a directory.  Recurse to all files and directories within
             # `path` and flatten the responses into a single list.
@@ -574,7 +568,6 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         When `path` is a directory, returns a list of the requested files, sorted
         chronologically by their modification times in
         """
-
         if not (isinstance(dataDirectory, str) and os.path.isdir(dataDirectory)):
             raise ValueError(
                 f"Data directory (value={repr(dataDirectory)}) is not valid"
@@ -621,7 +614,6 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         -------
         A 3D Slicer node object representing the data
         """
-
         with open(filename, "rb") as f:
             contents = pk.load(f)
 
@@ -629,19 +621,19 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
             return self.loadCenterlineFromP3FileContents(contents)
 
         print(f"File type for {filename} is not currently supported")
-        print(f"{filename} contains {summary_repr(contents)}")  # !!!
-        # !!! Create node from contents
+        print(f"{filename} contains {summary_repr(contents)}")
 
         return None
 
     def loadCenterlineFromP3FileContents(self, contents):
         """
-        Load a centerline using the data object written into a P3 file named "####_CENTERLINE.p3"
+        Load a centerline using the data object written into a P3 file named
+        "####_CENTERLINE.p3"
 
         Parameters
         ----------
-        contents : a pair of arrays (centerline_points, centerline_normals). Currently we only use
-            centerline_points, piecing them together into a curve node.
+        contents : a pair of arrays (centerline_points, centerline_normals).  Currently
+            we only use centerline_points, piecing them together into a curve node.
 
         Returns
         -------
@@ -659,10 +651,10 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         )
         centerline_node.GetDisplayNode().SetGlyphTypeFromString("Vertex2D")
         centerline_node.SetCurveTypeToLinear()
-        centerline_node.LockedOn()  # don't allow mouse interaction to move control points
-        centerline_node.GetDisplayNode().SetPropertiesLabelVisibility(
-            False
-        )  # hide the text label because it distracts from landmarks
+        # don't allow mouse interaction to move control points
+        centerline_node.LockedOn()
+        # hide the text label because it distracts from landmarks
+        centerline_node.GetDisplayNode().SetPropertiesLabelVisibility(False)
         return centerline_node
 
     def loadOneNode(self, filename, basename_repr, props):
@@ -683,7 +675,6 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         -------
         A 3D Slicer node object representing the data
         """
-
         # Determine the node type from the filename extension, using its
         # immediate-ancestor directory's name if necessary.  Note: check for ".seg.nrrd"
         # before checking for ".nrrd".
@@ -720,12 +711,13 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         return node
 
     def clearSubject(self):
-        """Set VPAWVisualizeLogic to initial state before any subject was loaded,
-        and clear the subject hierarchy."""
+        """
+        Set VPAWVisualizeLogic to initial state before any subject was loaded, and clear
+        the subject hierarchy.
+        """
         self.subject_id = None
-        self.subject_item_id = (
-            None  # subject hierarchy item id for the currently loaded subject
-        )
+        # subject hierarchy item id for the currently loaded subject
+        self.subject_item_id = None
         self.input_image_node = None
         self.input_ijk_to_ras = None
         self.centerline_node = None
@@ -739,17 +731,20 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         """
         Remove all nodes from the 3D Slicer subject hierarchy
         """
-
         slicer.mrmlScene.GetSubjectHierarchyNode().RemoveAllItems(True)
         self.show_nodes = list()
 
     def subjectIsCurrentlyLoaded(self) -> bool:
-        """Whether a subject has been loaded."""
+        """
+        Whether a subject has been loaded.
+        """
         return self.subject_id is not None
 
     def put_node_under_subject(self, node):
-        """Move the given node in the subject hierarchy such that it becomes a child of the
-        subject item for the currently loaded subject."""
+        """
+        Move the given node in the subject hierarchy such that it becomes a child of the
+        subject item for the currently loaded subject.
+        """
         shNode = slicer.mrmlScene.GetSubjectHierarchyNode()
         node_item = shNode.GetItemByDataNode(node)
         shNode.SetItemParent(node_item, self.subject_item_id)
@@ -768,7 +763,6 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         filename: str
             The data source for the file
         """
-
         # The node types supported by 3D Slicer generally can be found with fgrep
         # 'loadNodeFromFile(filename' from
         # https://github.com/Slicer/Slicer/blob/main/Base/Python/slicer/util.py.
@@ -808,7 +802,6 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         subject_name : str
             Name for folder in subject hierarchy to contain the nodes
         """
-
         self.subject_id = subject_name
 
         # The subject hierarchy node can contain subject (patient), study (optionally),
@@ -861,7 +854,9 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         slicer.mrmlScene.EndState(slicer.vtkMRMLScene.ImportState)
 
     def create_input_ijk2ras_as_node(self):
-        """Get the IJK to RAS matrix for the input image as a transform node."""
+        """
+        Get the IJK to RAS matrix for the input image as a transform node.
+        """
         if self.input_image_node is None:
             raise RuntimeError("Could not find input image node.")
         ijkToRas = vtk.vtkMatrix4x4()
@@ -873,10 +868,11 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         self.input_ijk_to_ras = ijkToRas_node
 
     def fix_image_origins_and_spacings(self):
-        """Some nodes rely on others for origin and spacing info, because it wasn't properly saved
-        in the files from which we generate those nodes. This functions goes through and transfers
-        origin and spacing info whereever it is needed."""
-
+        """
+        Some nodes rely on others for origin and spacing info, because it wasn't
+        properly saved in the files from which we generate those nodes.  This functions
+        goes through and transfers origin and spacing info whereever it is needed.
+        """
         if self.laplace_sol_node is None:
             raise RuntimeError("Could not find laplace solution node.")
         if self.input_image_node is None:
@@ -892,9 +888,11 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         self.centerline_node.SetAndObserveTransformNodeID(self.input_ijk_to_ras.GetID())
 
     def restrict_laplace_sol_to_segmentation(self):
-        """If the laplace solution and the segmentation node both exist, mask the laplace solution
-        volume by the segmentation node. If either of them doesn't exists, raise an exception."""
-
+        """
+        If the laplace solution and the segmentation node both exist, mask the laplace
+        solution volume by the segmentation node.  If either of them doesn't exists,
+        raise an exception.
+        """
         if self.segmentation_node is None:
             raise RuntimeError("Could not find segmentation node.")
         if self.laplace_sol_node is None:
@@ -927,7 +925,6 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         """
         Make the 3D Slicer viewing panels default to something reasonable
         """
-
         # Make sure at least one input image (if any) is being viewed
         if self.show_nodes:
             slicer.util.setSliceViewerLayers(foreground=self.show_nodes[0], fit=True)
@@ -943,32 +940,38 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         threeDView.lookFromAxis(ctk.ctkAxesWidget.Left)
 
     def set_segmentation_node_opacity(self, opacity):
-        """Set segmentation node opacity, a float in [0,1], if segmentation node exists.
-        If segmentation node doesn't exist, this simply does nothing."""
+        """
+        Set segmentation node opacity, a float in [0,1], if segmentation node exists.
+        If segmentation node doesn't exist, this simply does nothing.
+        """
         if self.segmentation_node is not None:
             self.segmentation_node.GetDisplayNode().SetOpacity3D(opacity)
 
     def compute_isosurfaces(self, num_isosurface_values: int, progress_callback=None):
-        """Compute isosurfaces of the laplace solution image, if one exists.
-        Raises exception if none exists.
+        """
+        Compute isosurfaces of the laplace solution image, if one exists.  Raises
+        exception if none exists.
 
         Args:
             num_isosurface_values: number of isosurface values
-            progress_callback: Optionally, a function that takes a progress_percentage float value.
-                If this is provided then progress_callback(progress_percentage) will be called by
+            progress_callback: Optionally, a function that takes a progress_percentage
+                float value.  If this is provided then
+                progress_callback(progress_percentage) will be called by
                 compute_isosurfaces while the computation is being done.
         """
         if self.laplace_sol_node is None:
             raise RuntimeError("Could not find a loaded Laplace solution image")
         if self.laplace_sol_masked_node is None:
             raise RuntimeError(
-                "No masked Laplace solution was found; there should be a volume node consisting of"
-                " the Laplace solution restricted to the airway segmentation."
+                "No masked Laplace solution was found; there should be a volume node"
+                " consisting of the Laplace solution restricted to the airway"
+                " segmentation."
             )
 
         isosurface_values = np.linspace(0, 1, num_isosurface_values)
 
-        # this does not work so well at actual min or max value so we leave a bit of room
+        # this does not work so well at actual min or max value so we leave a bit of
+        # room
         isosurface_values[0] += 0.02
         isosurface_values[-1] -= 0.02
 
@@ -986,7 +989,9 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         self.laplace_isosurface_node = laplace_isosurface_node
 
     def isosurface_exists(self) -> bool:
-        """Whether isosurface has already been computed"""
+        """
+        Whether isosurface has already been computed
+        """
         return (
             self.laplace_isosurface_node is not None
             and slicer.mrmlScene.GetNodeByID(self.laplace_isosurface_node.GetID())
@@ -1001,8 +1006,8 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
 
 class VPAWVisualizeTest(slicer.ScriptedLoadableModule.ScriptedLoadableModuleTest):
     """
-    This is the test case for your scripted module.
-    Uses ScriptedLoadableModuleTest base class, available at:
+    This is the test case for your scripted module.  Uses ScriptedLoadableModuleTest
+    base class, available at:
     https://github.com/Slicer/Slicer/blob/main/Base/Python/slicer/ScriptedLoadableModule.py
     """
 
@@ -1011,27 +1016,27 @@ class VPAWVisualizeTest(slicer.ScriptedLoadableModule.ScriptedLoadableModuleTest
         Do whatever is needed to reset the state - typically a scene clear will be
         enough.
         """
-
         slicer.mrmlScene.Clear()
 
     def runTest(self):
-        """Run as few or as many tests as needed here."""
+        """
+        Run as few or as many tests as needed here.
+        """
         self.setUp()
         self.test_VPAWVisualize1()
 
     def test_VPAWVisualize1(self):
         """
-        Ideally you should have several levels of tests.  At the lowest level tests
+        Ideally we should have several levels of tests.  At the lowest level tests
         should exercise the functionality of the logic with different inputs (both valid
-        and invalid).  At higher levels your tests should emulate the way the user would
-        interact with your code and confirm that it still works the way you intended.
+        and invalid).  At higher levels our tests should emulate the way the user would
+        interact with our code and confirm that it still works the way we intended.
 
         One of the most important features of the tests is that it should alert other
-        developers when their changes will have an impact on the behavior of your
-        module.  For example, if a developer removes a feature that you depend on, your
-        test should break so they know that the feature is needed.
+        developers when their changes will have an impact on the behavior of our module.
+        For example, if a developer removes a feature that we depend on, our test should
+        break so they know that the feature is needed.
         """
-
         self.delayDisplay("Starting the test")
 
         # Get/create input data

@@ -38,62 +38,38 @@
     </widget>
    </item>
    <item>
-    <widget class="ctkCollapsibleButton" name="inputsCollapsibleButton">
-     <property name="text">
-      <string>VPAW Model: Inputs</string>
+    <widget class="ctkCollapsibleButton" name="linkPediatricAirwayAtlasCollapsibleButton" native="true">
+     <property name="text" stdset="0">
+      <string>VPAW Model: Link to Pediatric Airway Atlas Codebase</string>
      </property>
-     <layout class="QFormLayout" name="formLayout_2">
+     <property name="collapsed" stdset="0">
+      <bool>false</bool>
+     </property>
+     <layout class="QFormLayout" name="linkPediatricAirwayAtlasFormLayout">
       <item row="0" column="0">
-       <widget class="QLabel" name="label">
+       <widget class="QLabel" name="pediatricAirwayAtlasDirectoryLabel">
         <property name="text">
-         <string>Input volume:</string>
+         <string>Pediatric Airway Atlas source directory</string>
         </property>
        </widget>
       </item>
       <item row="0" column="1">
-       <widget class="qMRMLNodeComboBox" name="inputSelector">
-        <property name="toolTip">
-         <string>Pick the input to the algorithm.</string>
-        </property>
-        <property name="nodeTypes">
-         <stringlist notr="true">
-          <string>vtkMRMLScalarVolumeNode</string>
-         </stringlist>
-        </property>
-        <property name="showChildNodeTypes">
-         <bool>false</bool>
-        </property>
-        <property name="addEnabled">
-         <bool>false</bool>
-        </property>
-        <property name="removeEnabled">
-         <bool>false</bool>
+       <widget class="ctkPathLineEdit" name="PediatricAirwayAtlasDirectory">
+        <property name="filters">
+         <set>ctkPathLineEdit::Dirs</set>
         </property>
        </widget>
       </item>
-      <item row="2" column="0">
-       <widget class="QLabel" name="label_3">
+      <item row="1" column="0" colspan="2">
+       <widget class="QPushButton" name="linkPediatricAirwayAtlasButton">
+        <property name="enabled">
+         <bool>false</bool>
+        </property>
+        <property name="toolTip">
+         <string>Link to Pediatric Airway Atlas codebase and install dependencies</string>
+        </property>
         <property name="text">
-         <string>Image threshold:</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="1">
-       <widget class="ctkSliderWidget" name="imageThresholdSliderWidget">
-        <property name="toolTip">
-         <string>Set threshold value for computing the output image. Voxels that have intensities lower than this value will set to zero.</string>
-        </property>
-        <property name="singleStep">
-         <double>0.100000000000000</double>
-        </property>
-        <property name="minimum">
-         <double>-100.000000000000000</double>
-        </property>
-        <property name="maximum">
-         <double>500.000000000000000</double>
-        </property>
-        <property name="value">
-         <double>0.500000000000000</double>
+         <string>Link to Pediatric Airway Atlas codebase and install dependencies</string>
         </property>
        </widget>
       </item>
@@ -101,116 +77,63 @@
     </widget>
    </item>
    <item>
-    <widget class="ctkCollapsibleButton" name="outputsCollapsibleButton">
+    <widget class="ctkCollapsibleButton" name="runPediatricAirwayAtlasCollapsibleButton">
      <property name="text">
-      <string>Outputs</string>
+      <string>VPAW Model: Run Pediatric Airway Atlas</string>
      </property>
-     <layout class="QFormLayout" name="formLayout_4">
+     <layout class="QFormLayout" name="formLayout_2">
       <item row="0" column="0">
-       <widget class="QLabel" name="label_2">
+       <widget class="QLabel" name="VPAWRootDirectoryLabel">
         <property name="text">
-         <string>Thresholded volume:</string>
+         <string>Input/Output Root Directory</string>
         </property>
        </widget>
       </item>
       <item row="0" column="1">
-       <widget class="qMRMLNodeComboBox" name="outputSelector">
-        <property name="toolTip">
-         <string>Pick the output to the algorithm.</string>
-        </property>
-        <property name="nodeTypes">
-         <stringlist notr="true">
-          <string>vtkMRMLScalarVolumeNode</string>
-         </stringlist>
-        </property>
-        <property name="showChildNodeTypes">
-         <bool>false</bool>
-        </property>
-        <property name="noneEnabled">
-         <bool>true</bool>
-        </property>
-        <property name="addEnabled">
-         <bool>true</bool>
-        </property>
-        <property name="removeEnabled">
-         <bool>true</bool>
+       <widget class="ctkPathLineEdit" name="VPAWRootDirectory">
+        <property name="filters">
+         <set>ctkPathLineEdit::Dirs</set>
         </property>
        </widget>
       </item>
       <item row="1" column="0">
-       <widget class="QLabel" name="label_5">
+       <widget class="QLabel" name="VPAWModelsDirectoryLabel">
         <property name="text">
-         <string>Inverted volume:</string>
+         <string>Models Directory</string>
         </property>
        </widget>
       </item>
       <item row="1" column="1">
-       <widget class="qMRMLNodeComboBox" name="invertedOutputSelector">
-        <property name="toolTip">
-         <string>Result with inverted threshold will be written into this volume</string>
+       <widget class="ctkPathLineEdit" name="VPAWModelsDirectory">
+        <property name="filters">
+         <set>ctkPathLineEdit::Dirs</set>
         </property>
-        <property name="nodeTypes">
-         <stringlist notr="true">
-          <string>vtkMRMLScalarVolumeNode</string>
-         </stringlist>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="patientPrefixLabel">
+        <property name="text">
+         <string>Patient prefix (optional)</string>
         </property>
-        <property name="showChildNodeTypes">
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QLineEdit" name="PatientPrefix"/>
+      </item>
+      <item row="3" column="0" colspan="2">
+       <widget class="QPushButton" name="runPediatricAirwayAtlasButton">
+        <property name="enabled">
          <bool>false</bool>
         </property>
-        <property name="noneEnabled">
-         <bool>true</bool>
-        </property>
-        <property name="addEnabled">
-         <bool>true</bool>
-        </property>
-        <property name="removeEnabled">
-         <bool>true</bool>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </item>
-   <item>
-    <widget class="ctkCollapsibleButton" name="advancedCollapsibleButton">
-     <property name="text">
-      <string>Advanced</string>
-     </property>
-     <property name="collapsed">
-      <bool>true</bool>
-     </property>
-     <layout class="QFormLayout" name="formLayout_3">
-      <item row="0" column="0">
-       <widget class="QLabel" name="label_4">
-        <property name="text">
-         <string>Invert threshold: </string>
-        </property>
-       </widget>
-      </item>
-      <item row="0" column="1">
-       <widget class="QCheckBox" name="invertOutputCheckBox">
         <property name="toolTip">
-         <string>If checked, values above threshold are set to 0. If unchecked, values below are set to 0.</string>
+         <string>Run Pediatric Airway Atlas</string>
         </property>
         <property name="text">
-         <string/>
+         <string>Run Pediatric Airway Atlas</string>
         </property>
        </widget>
       </item>
      </layout>
-    </widget>
-   </item>
-   <item>
-    <widget class="QPushButton" name="applyButton">
-     <property name="enabled">
-      <bool>false</bool>
-     </property>
-     <property name="toolTip">
-      <string>Run the algorithm.</string>
-     </property>
-     <property name="text">
-      <string>Apply</string>
-     </property>
     </widget>
    </item>
    <item>
@@ -253,54 +176,5 @@
   </customwidget>
  </customwidgets>
  <resources/>
- <connections>
-  <connection>
-   <sender>VPAWModel</sender>
-   <signal>mrmlSceneChanged(vtkMRMLScene*)</signal>
-   <receiver>inputSelector</receiver>
-   <slot>setMRMLScene(vtkMRMLScene*)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>122</x>
-     <y>132</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>248</x>
-     <y>61</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>VPAWModel</sender>
-   <signal>mrmlSceneChanged(vtkMRMLScene*)</signal>
-   <receiver>outputSelector</receiver>
-   <slot>setMRMLScene(vtkMRMLScene*)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>82</x>
-     <y>135</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>220</x>
-     <y>161</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>VPAWModel</sender>
-   <signal>mrmlSceneChanged(vtkMRMLScene*)</signal>
-   <receiver>invertedOutputSelector</receiver>
-   <slot>setMRMLScene(vtkMRMLScene*)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>161</x>
-     <y>8</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>173</x>
-     <y>176</y>
-    </hint>
-   </hints>
-  </connection>
- </connections>
+ <connections/>
 </ui>
