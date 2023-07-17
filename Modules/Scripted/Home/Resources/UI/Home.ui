@@ -12,19 +12,6 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QPushButton" name="VPAWVisualizeButton">
-     <property name="enabled">
-      <bool>true</bool>
-     </property>
-     <property name="toolTip">
-      <string>Go to VPAW Visualize module</string>
-     </property>
-     <property name="text">
-      <string>Go to VPAW Visualize module</string>
-     </property>
-    </widget>
-   </item>
-   <item>
     <widget class="QPushButton" name="VPAWModelButton">
      <property name="enabled">
       <bool>true</bool>
@@ -34,6 +21,19 @@
      </property>
      <property name="text">
       <string>Go to VPAW Model module</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="VPAWVisualizeButton">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
+     <property name="toolTip">
+      <string>Go to VPAW Visualize module</string>
+     </property>
+     <property name="text">
+      <string>Go to VPAW Visualize module</string>
      </property>
     </widget>
    </item>
