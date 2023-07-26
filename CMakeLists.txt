@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.16.3)
+if(COMMAND CMAKE_POLICY)
+  cmake_policy(SET CMP0135 NEW)
+endif(COMMAND CMAKE_POLICY)
 
-# Enable C++14
+# Enable C++17
 if(NOT DEFINED CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 17)
 endif()
@@ -182,18 +185,18 @@ FetchContent_Populate(${extension_name}
  )
 list(APPEND Slicer_EXTENSION_SOURCE_DIRS ${${extension_name}_SOURCE_DIR})
 
-#SlicerIMSTK
-set(extension_name "SlicerIMSTK")
-set(${extension_name}_SOURCE_DIR "${CMAKE_BINARY_DIR}/${extension_name}")
-FetchContent_Populate(${extension_name}
- SOURCE_DIR     ${${extension_name}_SOURCE_DIR}
- GIT_REPOSITORY https://github.com/KitwareMedical/SlicerIMSTK.git
- GIT_TAG        cd37cd73f853cf3cb09b9611d9cb715d5f84613c
- GIT_PROGRESS   1
- QUIET
- )
-message(STATUS "Remote - ${extension_name} [OK]")
-list(APPEND Slicer_EXTENSION_SOURCE_DIRS ${${extension_name}_SOURCE_DIR})
+# #SlicerIMSTK
+# set(extension_name "SlicerIMSTK")
+# set(${extension_name}_SOURCE_DIR "${CMAKE_BINARY_DIR}/${extension_name}")
+# FetchContent_Populate(${extension_name}
+#  SOURCE_DIR     ${${extension_name}_SOURCE_DIR}
+#  GIT_REPOSITORY https://github.com/KitwareMedical/SlicerIMSTK.git
+#  GIT_TAG        cd37cd73f853cf3cb09b9611d9cb715d5f84613c
+#  GIT_PROGRESS   1
+#  QUIET
+#  )
+# message(STATUS "Remote - ${extension_name} [OK]")
+# list(APPEND Slicer_EXTENSION_SOURCE_DIRS ${${extension_name}_SOURCE_DIR})
 
 #SlicerSegmentEditorExtraEffects modules
 set(extension_name "SlicerSegmentEditorExtraEffects")
@@ -208,7 +211,7 @@ FetchContent_Populate(${extension_name}
 message(STATUS "Remote - ${extension_name} [OK]")
 list(APPEND Slicer_EXTENSION_SOURCE_DIRS ${${extension_name}_SOURCE_DIR})
 
-include(${SlicerIMSTK_SOURCE_DIR}/SuperBuildPrerequisites.cmake)
+# include(${SlicerIMSTK_SOURCE_DIR}/SuperBuildPrerequisites.cmake)
 
 # Add Slicer sources
 add_subdirectory(${slicersources_SOURCE_DIR} ${slicersources_BINARY_DIR})
