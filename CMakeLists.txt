@@ -22,7 +22,7 @@ if(NOT DEFINED slicersources_SOURCE_DIR)
   # Download Slicer sources and set variables slicersources_SOURCE_DIR and slicersources_BINARY_DIR
   FetchContent_Populate(slicersources
     GIT_REPOSITORY ${EP_GIT_PROTOCOL}://github.com/Slicer/Slicer
-    GIT_TAG        43f69ee941e430bbd365593ba7d5a959de33e903 # 2023-03-11
+    GIT_TAG        516716c035743cd26364a7e7aefb72940d8abc8c # 2024-01-20
     GIT_PROGRESS   1
     )
 else()
@@ -171,23 +171,23 @@ set(${extension_name}_SOURCE_DIR "${CMAKE_BINARY_DIR}/${extension_name}")
 FetchContent_Populate(${extension_name}
  SOURCE_DIR     ${${extension_name}_SOURCE_DIR}
  GIT_REPOSITORY https://github.com/SlicerMorph/SlicerMorph.git
- GIT_TAG        f7c6f82397e1124445e7bcc9824f99ae37d4e64a
+ GIT_TAG        270e10baf009807b6107941dd75cb109a9d79905  #2024-01-02
  GIT_PROGRESS   1
  QUIET
  )
 list(APPEND Slicer_EXTENSION_SOURCE_DIRS ${${extension_name}_SOURCE_DIR}/ImageStacks)
 
-#FlyThrough modules
-set(extension_name "FlyThrough")
-set(${extension_name}_SOURCE_DIR "${CMAKE_BINARY_DIR}/${extension_name}")
-FetchContent_Populate(${extension_name}
- SOURCE_DIR     ${${extension_name}_SOURCE_DIR}
- GIT_REPOSITORY https://github.com/andinet/FlyThrough.git
- GIT_TAG        5761298cb1bfa602a86ba4fb6b0c29115e1b092a
- GIT_PROGRESS   1
- QUIET
- )
-list(APPEND Slicer_EXTENSION_SOURCE_DIRS ${${extension_name}_SOURCE_DIR})
+# #FlyThrough modules
+# set(extension_name "FlyThrough")
+# set(${extension_name}_SOURCE_DIR "${CMAKE_BINARY_DIR}/${extension_name}")
+# FetchContent_Populate(${extension_name}
+#  SOURCE_DIR     ${${extension_name}_SOURCE_DIR}
+#  GIT_REPOSITORY https://github.com/andinet/FlyThrough.git
+#  GIT_TAG        5761298cb1bfa602a86ba4fb6b0c29115e1b092a
+#  GIT_PROGRESS   1
+#  QUIET
+#  )
+# list(APPEND Slicer_EXTENSION_SOURCE_DIRS ${${extension_name}_SOURCE_DIR})
 
 # #SlicerIMSTK
 # set(extension_name "SlicerIMSTK")
@@ -208,7 +208,7 @@ set(${extension_name}_SOURCE_DIR "${CMAKE_BINARY_DIR}/${extension_name}")
 FetchContent_Populate(${extension_name}
  SOURCE_DIR     ${${extension_name}_SOURCE_DIR}
  GIT_REPOSITORY https://github.com/lassoan/SlicerSegmentEditorExtraEffects.git
- GIT_TAG        719b242faf301c899fb8ec7a448440ae54ca762c
+ GIT_TAG        f43df35af66a0b60000b008e0fa061d53319dc78  #2023-04-15
  GIT_PROGRESS   1
  QUIET
  )
