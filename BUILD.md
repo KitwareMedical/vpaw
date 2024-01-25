@@ -27,8 +27,7 @@ Prerequisites
 
     * Create a [Github](https://github.com) account.
 
-    * Setup your SSH keys following [these](https://help.github.com/articles/generating-ssh-keys) instructions at the
-    exception of `step 2` where you should __NOT__ enter a passphrase.
+    * Setup your SSH keys following [these](https://help.github.com/articles/generating-ssh-keys) instructions, with the exception of `step 2` where you should __NOT__ enter a passphrase.
 
     * Setup [your git username](https://help.github.com/articles/setting-your-username-in-git) and [your git email](https://help.github.com/articles/setting-your-email-in-git).
 
@@ -48,7 +47,7 @@ cd /c/W
 git clone https://github.com/KitwareMedical/vpaw.git v
 ```
 
-Note: use short source and build directory names to avoid the [maximum path length limitation](http://msdn.microsoft.com/en-us/library/windows/desktop/aa365247%28v=vs.85%29.aspx#maxpath).
+Note: use short source and build directory names to avoid the [maximum path length limitation](https://learn.microsoft.com/en-us/windows/win32/fileio/naming-a-file#maximum-path-length-limitation).
 
 Build
 -----
