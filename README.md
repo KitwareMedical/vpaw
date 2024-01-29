@@ -45,3 +45,5 @@ This software is licensed under the terms of the [Apache License Version 2.0](LI
 ## How to cite ?
 
 Quammen CW, Taylor RM 2nd, Krajcevski P, Mitran S, Enquobahrie A, Superfine R, Davis B, Davis S, Zdanski C. The Virtual Pediatric Airways Workbench. Stud Health Technol Inform. 2016;220:295-300. PMID: [27046595](https://pubmed.ncbi.nlm.nih.gov/27046595/); PMCID: [PMC5588666](http://www.ncbi.nlm.nih.gov/pmc/articles/pmc5588666/).
+
+![vpaw by Kitware, Inc.](Applications/vpawApp/Resources/Images/LogoFull.png?raw=true)
