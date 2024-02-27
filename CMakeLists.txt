@@ -99,7 +99,6 @@ if(WIN32)
   option(Slicer_BUILD_WIN32_CONSOLE             "Build application executable as a console app (allows capturing and piping console output)" ON)
 endif()
 
-option(vpaw_USE_IMSTK                           "Enable IMSTK-related capabilities"                   OFF)
 option(Slicer_BUILD_DICOM_SUPPORT               "Build application with DICOM support"                ON)
 option(Slicer_BUILD_DIFFUSION_SUPPORT           "Build application with Diffusion support"            OFF)
 option(Slicer_BUILD_EXTENSIONMANAGER_SUPPORT    "Build application with ExtensionManager support"     ON)
@@ -188,22 +187,6 @@ list(APPEND Slicer_EXTENSION_SOURCE_DIRS ${${extension_name}_SOURCE_DIR}/ImageSt
 #  QUIET
 #  )
 # list(APPEND Slicer_EXTENSION_SOURCE_DIRS ${${extension_name}_SOURCE_DIR})
-
-#SlicerIMSTK
-if(vpaw_USE_IMSTK)
-  set(extension_name "SlicerIMSTK")
-  set(${extension_name}_SOURCE_DIR "${CMAKE_BINARY_DIR}/${extension_name}")
-  FetchContent_Populate(${extension_name}
-   SOURCE_DIR     ${${extension_name}_SOURCE_DIR}
-   GIT_REPOSITORY https://github.com/KitwareMedical/SlicerIMSTK.git
-   GIT_TAG        cd37cd73f853cf3cb09b9611d9cb715d5f84613c
-   GIT_PROGRESS   1
-   QUIET
-   )
-  message(STATUS "Remote - ${extension_name} [OK]")
-  list(APPEND Slicer_EXTENSION_SOURCE_DIRS ${${extension_name}_SOURCE_DIR})
-  include(${${extension_name}_SOURCE_DIR}/SuperBuildPrerequisites.cmake)
-endif()
 
 #SlicerSegmentEditorExtraEffects modules
 set(extension_name "SlicerSegmentEditorExtraEffects")
