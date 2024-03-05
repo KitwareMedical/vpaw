@@ -136,7 +136,6 @@ set(Slicer_QTLOADABLEMODULES_DISABLED
 set(Slicer_QTSCRIPTEDMODULES_DISABLED
   DataProbe
   DMRIInstall
-  Endoscopy
   LabelStatistics
   PerformanceTests
   VectorToScalarVolume
@@ -189,19 +188,6 @@ list(APPEND Slicer_EXTENSION_SOURCE_DIRS ${${extension_name}_SOURCE_DIR}/ImageSt
 #  )
 # list(APPEND Slicer_EXTENSION_SOURCE_DIRS ${${extension_name}_SOURCE_DIR})
 
-# #SlicerIMSTK
-# set(extension_name "SlicerIMSTK")
-# set(${extension_name}_SOURCE_DIR "${CMAKE_BINARY_DIR}/${extension_name}")
-# FetchContent_Populate(${extension_name}
-#  SOURCE_DIR     ${${extension_name}_SOURCE_DIR}
-#  GIT_REPOSITORY https://github.com/KitwareMedical/SlicerIMSTK.git
-#  GIT_TAG        cd37cd73f853cf3cb09b9611d9cb715d5f84613c
-#  GIT_PROGRESS   1
-#  QUIET
-#  )
-# message(STATUS "Remote - ${extension_name} [OK]")
-# list(APPEND Slicer_EXTENSION_SOURCE_DIRS ${${extension_name}_SOURCE_DIR})
-
 #SlicerSegmentEditorExtraEffects modules
 set(extension_name "SlicerSegmentEditorExtraEffects")
 set(${extension_name}_SOURCE_DIR "${CMAKE_BINARY_DIR}/${extension_name}")
@@ -215,7 +201,29 @@ FetchContent_Populate(${extension_name}
 message(STATUS "Remote - ${extension_name} [OK]")
 list(APPEND Slicer_EXTENSION_SOURCE_DIRS ${${extension_name}_SOURCE_DIR})
 
-# include(${SlicerIMSTK_SOURCE_DIR}/SuperBuildPrerequisites.cmake)
+#MarkupsToModel modules
+set(extension_name "MarkupsToModel")
+set(${extension_name}_SOURCE_DIR "${CMAKE_BINARY_DIR}/${extension_name}")
+FetchContent_Populate(${extension_name}
+ SOURCE_DIR     ${${extension_name}_SOURCE_DIR}
+ GIT_REPOSITORY https://github.com/SlicerIGT/SlicerMarkupsToModel.git
+ GIT_TAG        312cf9f8ccb84613e191a0a3f18cd3f865026aeb  #2023-08-23
+ GIT_PROGRESS   1
+ QUIET
+ )
+list(APPEND Slicer_EXTENSION_SOURCE_DIRS ${${extension_name}_SOURCE_DIR})
+
+#AirwaySegmentation modules
+set(extension_name "AirwaySegmentation")
+set(${extension_name}_SOURCE_DIR "${CMAKE_BINARY_DIR}/${extension_name}")
+FetchContent_Populate(${extension_name}
+ SOURCE_DIR     ${${extension_name}_SOURCE_DIR}
+ GIT_REPOSITORY https://github.com/Slicer/SlicerAirwaySegmentation.git
+ GIT_TAG        d3954e4c1b943353811132d49111f58e40ded5b8  #2022-03-22
+ GIT_PROGRESS   1
+ QUIET
+ )
+list(APPEND Slicer_EXTENSION_SOURCE_DIRS ${${extension_name}_SOURCE_DIR})
 
 # Add Slicer sources
 add_subdirectory(${slicersources_SOURCE_DIR} ${slicersources_BINARY_DIR})
