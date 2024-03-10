@@ -23,6 +23,10 @@ A typical workflow will consist of the following steps:
 
 [^1]: See section 2.1 of Hong Y, Niethammer M, Andruejol J, Kimbell JS, Pitkin E, Superfine R, Davis S, Zdanski CJ, Davis B. A pediatric airway atlas and its application in subglottic stenosis. Proc IEEE Int Symp Biomed Imaging. 2013 Apr;2013:1206-1209. doi: [10.1109/ISBI.2013.6556697](https://dx.doi.org/10.1109/ISBI.2013.6556697). PMID: [26929791](https://pubmed.ncbi.nlm.nih.gov/26929791/); PMCID: [PMC4769591](http://www.ncbi.nlm.nih.gov/pmc/articles/pmc4769591/).
 
+## Usage
+
+This application is under development but can already be used to process and visualize CT scans if you have access to the private [pediatric_airway_atlas](https://github.com/uncbiag/pediatric_airway_atlas) research repository. [A guided tour can be found here.](doc/tour_VPAWModel_VPAWVisualize.md)
+
 ## Maintainers
 
 * [Contributing](CONTRIBUTING.md)
