@@ -11,15 +11,14 @@ The initial source files were created using [KitwareMedical/SlicerCustomAppTempl
 Prerequisites
 -------------
 
-* Microsoft Windows 7 or above recommended
+* Microsoft Windows 10 or above recommended
 
 * Supported Microsoft Visual Studio versions:
-    * Visual Studio 2015
-    * Visual Studio 2017
+    * Visual Studio 17 2022
 
-* [CMake](http://cmake.org/cmake/resources/software.html), version 3.11 or above
+* [CMake](http://cmake.org/cmake/resources/software.html), version 3.16.3 or above
 
-* Qt, version 5.10 or above
+* Qt, version 5.15.2 recommended
 
 * [Git](http://git-scm.com/downloads)
 
@@ -51,7 +50,7 @@ Note: use short source and build directory names to avoid the [maximum path leng
 
 Build
 -----
-Note: The build process will take approximately 3 hours.
+Note: The build process will take approximately 3 hours on a modern computer.
 
 <b>Option 1: CMake GUI and Visual Studio (Recommended)</b>
 
@@ -69,7 +68,7 @@ Note: The build process will take approximately 3 hours.
 cd C:\W\
 mkdir vR
 cd vR
-cmake -G "Visual Studio 16 2019" -A x64 -DQt5_DIR:PATH=`C:/Qt/${QT_VERSION}/${COMPILER}/lib/cmake/Qt5 ..\v
+cmake -G "Visual Studio 17 2022" -A x64 -DQt5_DIR:PATH=`C:/Qt/${QT_VERSION}/${COMPILER}/lib/cmake/Qt5 ..\v
 cmake --build . --config Release -- /maxcpucount:4
 ```
 
@@ -85,9 +84,9 @@ Install [NSIS 2](http://sourceforge.net/projects/nsis/files/)
 <b>Option 2: Command Line</b>
 
 1. Start the [Command Line Prompt](http://windows.microsoft.com/en-us/windows/command-prompt-faq)
-2. Build the `PACKAGE` target by typing the following commands:
+2. Build the `package` target by typing the following commands:
 
 ```bat
 cd C:\W\vR\Slicer-build
-cmake --build . --config Release --target PACKAGE
+cmake --build . --config Release --target package
 ```
