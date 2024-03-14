@@ -1,0 +1,54 @@
+target-version = "py39"
+line-length = 120
+
+[lint]
+select = [
+#  "ARG",         # flake8-unused-arguments
+#  "ANN",         # flake8-annotations
+  "B",           # flake8-bugbear
+  "C4",          # flake8-comprehensions
+  "COM",         # flake8-commas
+  "D",           # pydocstyle
+  "E", "F", "W", # flake8
+  "EXE",         # flake8-executable
+  "G",           # flake8-logging-format
+#  "I",           # isort
+  "ICN",         # flake8-import-conventions
+  "ISC",         # flake8-implicit-str-concat
+  "NPY",         # NumPy specific rules
+#  "PERF",        # Perflint
+  "PGH",         # pygrep-hooks
+  "PIE",         # flake8-pie
+  "PL",          # pylint
+  "PT",          # flake8-pytest-style
+  "Q",           # flake8-quote
+  "RET",         # flake8-return
+  "RUF",         # Ruff-specific
+#  "S",           # flake8-bandit
+  "SIM",         # flake8-simplify
+  "UP",          # pyupgrade
+  "YTT",         # flake8-2020
+]
+extend-ignore = [
+  "E402",    # Module level import not at top of file
+  "G004",    # logging-f-string
+  "PIE790",  # unnecessary-pass
+  # Exceptions below are specific to vpaw
+  "C408",    # Unnecessary `dict` call (rewrite as a literal)
+  "D10",     # undocumented-public-*
+  "D200",    # One-line docstring should fit on one line
+  "D205",    # 1 blank line required between summary line and description
+  "D400",    # First line should end with a period
+  "D401",    # First line of docstring should be in imperative mood
+  "E722",    # Do not use bare `except`
+  "F841",    # Local variable `imported` is assigned to but never used
+  "G003",    # Logging statement uses `+`
+  "ISC003",  # Explicitly concatenated string should be implicitly concatenated
+  "PLR0911", # Too many return statements (9 > 6)
+  "PLR0915", # Too many statements (52 > 50)
+  "PIE810",  # Call `endswith` once with a `tuple`
+  "RET505",  # Unnecessary {branch} after return statement
+]
+
+[lint.pydocstyle]
+convention = "pep257"
