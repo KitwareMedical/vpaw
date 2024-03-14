@@ -3,7 +3,7 @@ import slicer
 
 
 def isosurfaces_from_volume(
-    vol_node, thresholds, decimate_target_reduction=0.25, progress_callback=None
+    vol_node, thresholds, decimate_target_reduction=0.25, progress_callback=None,
 ):
     """
     Compute a model node consisting of isosurfaces from the given volume node.  Uses
@@ -19,7 +19,6 @@ def isosurfaces_from_volume(
             be called while the computation is being done.
     Return: a vtkMRMLModelNode
     """
-
     if progress_callback is None:
 
         def progress_callback(progress_percentage):
@@ -49,14 +48,14 @@ def isosurfaces_from_volume(
     flying_edges.ComputeGradientsOff()
     flying_edges.ComputeNormalsOff()
     flying_edges.AddObserver(
-        vtk.vtkCommand.ProgressEvent, create_vtk_progress_callback(0, 50)
+        vtk.vtkCommand.ProgressEvent, create_vtk_progress_callback(0, 50),
     )
 
     transformer = vtk.vtkTransformPolyDataFilter()
     transformer.SetInputConnection(flying_edges.GetOutputPort())
     transformer.SetTransform(ijkToRas_transform)
     transformer.AddObserver(
-        vtk.vtkCommand.ProgressEvent, create_vtk_progress_callback(50, 55)
+        vtk.vtkCommand.ProgressEvent, create_vtk_progress_callback(50, 55),
     )
 
     decimator = vtk.vtkDecimatePro()
@@ -67,7 +66,7 @@ def isosurfaces_from_volume(
     decimator.SetMaximumError(1)
     decimator.SetTargetReduction(decimate_target_reduction)
     decimator.AddObserver(
-        vtk.vtkCommand.ProgressEvent, create_vtk_progress_callback(55, 80)
+        vtk.vtkCommand.ProgressEvent, create_vtk_progress_callback(55, 80),
     )
 
     normals = vtk.vtkPolyDataNormals()
@@ -76,13 +75,13 @@ def isosurfaces_from_volume(
     normals.SetFeatureAngle(60)
     normals.SetSplitting(True)
     normals.AddObserver(
-        vtk.vtkCommand.ProgressEvent, create_vtk_progress_callback(80, 95)
+        vtk.vtkCommand.ProgressEvent, create_vtk_progress_callback(80, 95),
     )
 
     stripper = vtk.vtkStripper()
     stripper.SetInputConnection(normals.GetOutputPort())
     stripper.AddObserver(
-        vtk.vtkCommand.ProgressEvent, create_vtk_progress_callback(95, 100)
+        vtk.vtkCommand.ProgressEvent, create_vtk_progress_callback(95, 100),
     )
 
     stripper.Update()

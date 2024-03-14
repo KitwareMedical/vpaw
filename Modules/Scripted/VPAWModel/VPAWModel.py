@@ -9,7 +9,6 @@ import slicer.util
 import sys
 import tempfile
 import time
-import vtk
 
 
 class BusyCursor:
@@ -102,7 +101,7 @@ class VPAWModelWidget(
         initialized.
         """
         slicer.ScriptedLoadableModule.ScriptedLoadableModuleWidget.__init__(
-            self, parent
+            self, parent,
         )
         slicer.util.VTKObservationMixin.__init__(self)
 
@@ -134,7 +133,7 @@ class VPAWModelWidget(
         viewNode.SetAxisLabelsVisible(False)
         viewNode.SetBoxVisible(False)
         viewNode.SetOrientationMarkerType(
-            slicer.vtkMRMLAbstractViewNode.OrientationMarkerTypeAxes
+            slicer.vtkMRMLAbstractViewNode.OrientationMarkerTypeAxes,
         )
 
         # Create logic class.  Logic implements all computations that should be possible
@@ -145,44 +144,44 @@ class VPAWModelWidget(
 
         # Connections for actions associated with a scene close.
         self.addObserver(
-            slicer.mrmlScene, slicer.mrmlScene.StartCloseEvent, self.onSceneStartClose
+            slicer.mrmlScene, slicer.mrmlScene.StartCloseEvent, self.onSceneStartClose,
         )
         self.addObserver(
-            slicer.mrmlScene, slicer.mrmlScene.EndCloseEvent, self.onSceneEndClose
+            slicer.mrmlScene, slicer.mrmlScene.EndCloseEvent, self.onSceneEndClose,
         )
 
         # These connections ensure that whenever user changes some settings on the GUI,
         # that is saved to QSettings.
         self.ui.PediatricAirwayAtlasDirectory.connect(
-            "currentPathChanged(const QString&)", self.updateQSettingsFromGUI
+            "currentPathChanged(const QString&)", self.updateQSettingsFromGUI,
         )
         self.ui.VPAWRootDirectory.connect(
-            "currentPathChanged(const QString&)", self.updateQSettingsFromGUI
+            "currentPathChanged(const QString&)", self.updateQSettingsFromGUI,
         )
         self.ui.VPAWModelsDirectory.connect(
-            "currentPathChanged(const QString&)", self.updateQSettingsFromGUI
+            "currentPathChanged(const QString&)", self.updateQSettingsFromGUI,
         )
         self.ui.PatientPrefix.connect(
-            "textChanged(const QString&)", self.updateQSettingsFromGUI
+            "textChanged(const QString&)", self.updateQSettingsFromGUI,
         )
         self.ui.PediatricAirwayAtlasDirectory.connect(
-            "validInputChanged(bool)", self.updateQSettingsFromGUI
+            "validInputChanged(bool)", self.updateQSettingsFromGUI,
         )
         self.ui.VPAWRootDirectory.connect(
-            "validInputChanged(bool)", self.updateQSettingsFromGUI
+            "validInputChanged(bool)", self.updateQSettingsFromGUI,
         )
         self.ui.VPAWModelsDirectory.connect(
-            "validInputChanged(bool)", self.updateQSettingsFromGUI
+            "validInputChanged(bool)", self.updateQSettingsFromGUI,
         )
 
         # Buttons
         self.ui.VPAWVisualizeButton.connect("clicked(bool)", self.onVPAWVisualizeButton)
         self.ui.HomeButton.connect("clicked(bool)", self.onHomeButton)
         self.ui.linkPediatricAirwayAtlasButton.connect(
-            "clicked(bool)", self.onLinkPediatricAirwayAtlasButton
+            "clicked(bool)", self.onLinkPediatricAirwayAtlasButton,
         )
         self.ui.runPediatricAirwayAtlasButton.connect(
-            "clicked(bool)", self.onRunPediatricAirwayAtlasButton
+            "clicked(bool)", self.onRunPediatricAirwayAtlasButton,
         )
 
         # No need to call self.updateGUIFromQSettings() because it will be called upon
@@ -231,11 +230,11 @@ class VPAWModelWidget(
         qsettings = qt.QSettings()
         qsettings.beginGroup("VPAWModel")
         self.ui.PediatricAirwayAtlasDirectory.currentPath = qsettings.value(
-            "PediatricAirwayAtlasDirectory", ""
+            "PediatricAirwayAtlasDirectory", "",
         )
         self.ui.VPAWRootDirectory.currentPath = qsettings.value("VPAWRootDirectory", "")
         self.ui.VPAWModelsDirectory.currentPath = qsettings.value(
-            "VPAWModelsDirectory", ""
+            "VPAWModelsDirectory", "",
         )
         qsettings.endGroup()
 
@@ -271,7 +270,7 @@ class VPAWModelWidget(
             "Process only files with this prefix.  Blank means all files."
         )
         if os.path.isdir(self.ui.VPAWRootDirectory.currentPath) and os.path.isdir(
-            self.ui.VPAWModelsDirectory.currentPath
+            self.ui.VPAWModelsDirectory.currentPath,
         ):
             self.ui.runPediatricAirwayAtlasButton.toolTip = "Run Pediatric Airway Atlas"
             self.ui.runPediatricAirwayAtlasButton.enabled = True
@@ -296,7 +295,6 @@ class VPAWModelWidget(
         are saved into the QSettomgs (so that they are restored when the application is
         restarted).
         """
-
         # If we got called to update QSettings because we updated the GUI from QSettings
         # then there's nothing more to do.  (Infinite loops are a drag.)
         if self._updatingGUIFromQSettings:
@@ -310,10 +308,10 @@ class VPAWModelWidget(
             self.ui.PediatricAirwayAtlasDirectory.currentPath,
         )
         self.setOrRemoveQSetting(
-            qsettings, "VPAWRootDirectory", self.ui.VPAWRootDirectory.currentPath
+            qsettings, "VPAWRootDirectory", self.ui.VPAWRootDirectory.currentPath,
         )
         self.setOrRemoveQSetting(
-            qsettings, "VPAWModelsDirectory", self.ui.VPAWModelsDirectory.currentPath
+            qsettings, "VPAWModelsDirectory", self.ui.VPAWModelsDirectory.currentPath,
         )
         qsettings.endGroup()
 
@@ -341,10 +339,10 @@ class VPAWModelWidget(
         user's request.
         """
         with slicer.util.tryWithErrorDisplay(
-            "Failed to compute results.", waitCursor=True
+            "Failed to compute results.", waitCursor=True,
         ):
             self.logic.linkPediatricAirwayAtlas(
-                self.ui.PediatricAirwayAtlasDirectory.currentPath
+                self.ui.PediatricAirwayAtlasDirectory.currentPath,
             )
 
     def onRunPediatricAirwayAtlasButton(self):
@@ -365,7 +363,7 @@ class VPAWModelWidget(
         Run the Pediatric Airway Atlas pipeline at the user's request.
         """
         with slicer.util.tryWithErrorDisplay(
-            "Failed to compute results.", waitCursor=True
+            "Failed to compute results.", waitCursor=True,
         ):
             self.logic.runPediatricAirwayAtlas(
                 self.ui.PediatricAirwayAtlasDirectory.currentPath,
@@ -442,7 +440,7 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
         logging.info("Pediatric Airway Atlas installation started")
 
         response = self.installAndImportDependencies() and self.ensureModulePath(
-            pediatricAirwayAtlasDirectory
+            pediatricAirwayAtlasDirectory,
         )
 
         if response:
@@ -453,7 +451,7 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
         stopTime = time.time()
         logging.info(
             f"Pediatric Airway Atlas installation completed in {stopTime-startTime:.2f}"
-            + " seconds"
+            + " seconds",
         )
         return response
 
@@ -483,7 +481,7 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
                     if hasattr(module, "__version__")
                     else f"    {pip_install_name} version: unknown"
                     for module_name, pip_install_name, module in installed_modules
-                ]
+                ],
             )
             slicer.util.infoDisplay(
                 f"Module{plural} installed:\n" + version_text,
@@ -516,7 +514,7 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
                 with BusyCursor():
                     slicer.util.pip_install(["--upgrade", "pip", "setuptools", "wheel"])
                     slicer.util.pip_install(
-                        [pip_install_name for _, pip_install_name in needs_installation]
+                        [pip_install_name for _, pip_install_name in needs_installation],
                     )
                     installed_modules = [
                         (
@@ -532,7 +530,7 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
                         [
                             f"Unable to install package{plural}.",
                             "Check the console for details.",
-                        ]
+                        ],
                     ),
                     "Install Error",
                 )
@@ -567,7 +565,6 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
         patientPrefix : str
             Process only files with this prefix.  Blank means all files.
         """
-
         # If self.pediatric_airway_atlas is not yet set then see if we can set it.
         if not hasattr(self, "pediatric_airway_atlas_directory") and not (
             os.path.isdir(pediatricAirwayAtlasDirectory)
@@ -581,9 +578,9 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
 
         # self.convertCTScansToNRRD(vPAWRootDirectory)
         response = self.convertFCSVLandmarksToP3(
-            vPAWRootDirectory, patientPrefix
+            vPAWRootDirectory, patientPrefix,
         ) and self.runSegmentation(
-            vPAWRootDirectory, vPAWModelsDirectory, patientPrefix
+            vPAWRootDirectory, vPAWModelsDirectory, patientPrefix,
         )
         if response:
             slicer.util.infoDisplay("The pipeline has completed", "Pipeline ran")
@@ -591,7 +588,7 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
         stopTime = time.time()
         logging.info(
             f"Pediatric Airway Atlas pipeline completed in {stopTime-startTime:.2f}"
-            + " seconds"
+            + " seconds",
         )
         return response
 
@@ -603,7 +600,7 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
             images_dir = os.path.join(vPAWRootDirectory, "images")
             input_landmarks_dir = os.path.join(vPAWRootDirectory, "landmarks")
             output_landmarks_dir = os.path.join(
-                vPAWRootDirectory, "transformed_landmarks"
+                vPAWRootDirectory, "transformed_landmarks",
             )
             num_workers = 1
             subject_prefix = patientPrefix
@@ -723,7 +720,7 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
                     optimizer_params=dict(lr=0.0001, weight_decay=1e-05),
                 ),
                 inference=dict(
-                    force_spacing=None, tiles_overlap=0.75, tile_fusion_mode="gaussian"
+                    force_spacing=None, tiles_overlap=0.75, tile_fusion_mode="gaussian",
                 ),
                 train_devices=[0, 1],
             )
