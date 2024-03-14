@@ -8,6 +8,5 @@
     <file alias="Logo.png">Images/Logo.png</file>
     <file alias="LogoFull.png">Images/LogoFull.png</file>
     <file alias="SplashScreen.png">Images/SplashScreen.png</file>
-    <file alias="cylinder.ply">Models/cylinder.ply</file>
   </qresource>
 </RCC>
