@@ -39,7 +39,7 @@ class HomeWidget(
 
     def __init__(self, parent):
         slicer.ScriptedLoadableModule.ScriptedLoadableModuleWidget.__init__(
-            self, parent
+            self, parent,
         )
         slicer.util.VTKObservationMixin.__init__(self)
 
@@ -151,7 +151,7 @@ class HomeWidget(
 
     def applyStyle(self, widgets, styleSheetName):
         stylesheetfile = self.resourcePath(styleSheetName)
-        with open(stylesheetfile, "r") as fh:
+        with open(stylesheetfile) as fh:
             style = fh.read()
             for widget in widgets:
                 widget.styleSheet = style
@@ -182,7 +182,6 @@ class HomeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
         """
         Run the actual algorithm
         """
-
         pass
 
     def exitApplication(self, status=slicer.util.EXIT_SUCCESS, message=None):
@@ -223,11 +222,11 @@ class HomeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
         # default node
         sliceCompositeNodes = slicer.util.getNodesByClass("vtkMRMLSliceCompositeNode")
         defaultSliceCompositeNode = slicer.mrmlScene.GetDefaultNodeByClass(
-            "vtkMRMLSliceCompositeNode"
+            "vtkMRMLSliceCompositeNode",
         )
         if not defaultSliceCompositeNode:
             defaultSliceCompositeNode = slicer.mrmlScene.CreateNodeByClass(
-                "vtkMRMLSliceCompositeNode"
+                "vtkMRMLSliceCompositeNode",
             )
             # CreateNodeByClass is factory method, need to unregister the result to
             # prevent memory leaks:
@@ -278,7 +277,6 @@ class HomeTest(slicer.ScriptedLoadableModule.ScriptedLoadableModuleTest):
         module.  For example, if a developer removes a feature that you depend on, your
         test should break so they know that the feature is needed.
         """
-
         self.delayDisplay("Starting the test")
         #
         # first, get some data
@@ -292,6 +290,6 @@ class HomeTest(slicer.ScriptedLoadableModule.ScriptedLoadableModuleTest):
 # Class for avoiding python error that is caused by the method SegmentEditor::setup
 # http://issues.slicer.org/view.php?id=3871
 #
-class HomeFileWriter(object):
+class HomeFileWriter:
     def __init__(self, parent):
         pass
