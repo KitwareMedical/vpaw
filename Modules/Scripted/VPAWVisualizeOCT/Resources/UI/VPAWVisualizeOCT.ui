@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>VPAWVisualize</class>
- <widget class="qMRMLWidget" name="VPAWVisualize">
+ <class>VPAWVisualizeOCT</class>
+ <widget class="qMRMLWidget" name="VPAWVisualizeOCT">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -25,15 +25,15 @@
     </widget>
    </item>
    <item>
-    <widget class="QPushButton" name="HomeButton">
+    <widget class="QPushButton" name="VPAWVisualizeButton">
      <property name="enabled">
       <bool>true</bool>
      </property>
      <property name="toolTip">
-      <string>Go to Home module</string>
+      <string>Go to VPAW Visualize module</string>
      </property>
      <property name="text">
-      <string>Go to Home module</string>
+      <string>Go to VPAW Visualize module</string>
      </property>
     </widget>
    </item>
@@ -51,22 +51,22 @@
     </widget>
    </item>
    <item>
-    <widget class="QPushButton" name="VPAWVisualizeOCTButton">
+    <widget class="QPushButton" name="HomeButton">
      <property name="enabled">
       <bool>true</bool>
      </property>
      <property name="toolTip">
-      <string>Go to VPAW Visualize OCT module</string>
+      <string>Go to Home module</string>
      </property>
      <property name="text">
-      <string>Go to VPAW Visualize OCT module</string>
+      <string>Go to Home module</string>
      </property>
     </widget>
    </item>
    <item>
     <widget class="ctkCollapsibleButton" name="inputsCollapsibleButton" native="true">
      <property name="text" stdset="0">
-      <string>VPAW Visualize: Inputs</string>
+      <string>VPAW Visualize OCT: Inputs</string>
      </property>
      <property name="collapsed" stdset="0">
       <bool>false</bool>

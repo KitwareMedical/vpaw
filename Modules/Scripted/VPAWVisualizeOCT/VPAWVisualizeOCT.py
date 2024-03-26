@@ -11,7 +11,6 @@ import qt
 import slicer
 import slicer.ScriptedLoadableModule
 import slicer.util
-from vpawvisualizelib.isosurfaces import isosurfaces_from_volume
 
 
 def summary_repr(contents):
@@ -59,11 +58,11 @@ def summary_repr(contents):
 
 
 #
-# VPAWVisualize
+# VPAWVisualizeOCT
 #
 
 
-class VPAWVisualize(slicer.ScriptedLoadableModule.ScriptedLoadableModule):
+class VPAWVisualizeOCT(slicer.ScriptedLoadableModule.ScriptedLoadableModule):
     """
     Uses ScriptedLoadableModule base class, available at:
     https://github.com/Slicer/Slicer/blob/main/Base/Python/slicer/ScriptedLoadableModule.py
@@ -71,22 +70,21 @@ class VPAWVisualize(slicer.ScriptedLoadableModule.ScriptedLoadableModule):
 
     def __init__(self, parent):
         slicer.ScriptedLoadableModule.ScriptedLoadableModule.__init__(self, parent)
-        self.parent.title = "VPAW Visualize"
+        self.parent.title = "VPAW Visualize OCT"
         self.parent.categories = ["VPAW"]
         # TODO: add here list of module names that this module requires
         self.parent.dependencies = []
         self.parent.contributors = [
-            "Andinet Enquobahrie (Kitware, Inc.)",
-            "Shreeraj Jadhav (Kitware, Inc.)",
-            "Jean-Christophe Fillion-Robin (Kitware, Inc.)",
-            "Ebrahim Ebrahim (Kitware, Inc.)",
             "Lee Newberg (Kitware, Inc.)",
+            "Ebrahim Ebrahim (Kitware, Inc.)",
+            "Andinet Enquobahrie (Kitware, Inc.)",
         ]
         # TODO: update with short description of the module and a link to online module
         # documentation
         self.parent.helpText = """
-This is the scripted loadable module named VPAW Visualize.  See more information in
-<a href="https://github.com/KitwareMedical/vpaw#VPAWVisualize">module documentation</a>.
+This is the scripted loadable module named VPAW Visualize OCT.  See more information in
+<a href="https://github.com/KitwareMedical/vpaw#VPAWVisualizeOCT">module
+documentation</a>.
 """
         # TODO: replace with organization, grant and thanks
         self.parent.acknowledgementText = """
@@ -115,11 +113,11 @@ def registerSampleData():
 
 
 #
-# VPAWVisualizeWidget
+# VPAWVisualizeOCTWidget
 #
 
 
-class VPAWVisualizeWidget(
+class VPAWVisualizeOCTWidget(
     slicer.ScriptedLoadableModule.ScriptedLoadableModuleWidget,
     slicer.util.VTKObservationMixin,
 ):
@@ -151,7 +149,7 @@ class VPAWVisualizeWidget(
 
         # Load widget from .ui file (created by Qt Designer).  Additional widgets can be
         # instantiated manually and added to self.layout.
-        uiWidget = slicer.util.loadUI(self.resourcePath("UI/VPAWVisualize.ui"))
+        uiWidget = slicer.util.loadUI(self.resourcePath("UI/VPAWVisualizeOCT.ui"))
         self.layout.addWidget(uiWidget)
         self.ui = slicer.util.childWidgetVariables(uiWidget)
 
@@ -172,7 +170,7 @@ class VPAWVisualizeWidget(
 
         # Create logic class.  Logic implements all computations that should be possible
         # to run in batch mode, without a graphical user interface.
-        self.logic = VPAWVisualizeLogic()
+        self.logic = VPAWVisualizeOCTLogic()
 
         # Connections
 
@@ -198,11 +196,9 @@ class VPAWVisualizeWidget(
 
         # Buttons
         self.ui.VPAWModelButton.connect("clicked(bool)", self.onVPAWModelButton)
-        self.ui.HomeButton.connect("clicked(bool)", self.onHomeButton)
+        self.ui.VPAWVisualizeButton.connect("clicked(bool)", self.onVPAWVisualizeButton)
         self.ui.VPAWModelOCTButton.connect("clicked(bool)", self.onVPAWModelOCTButton)
-        self.ui.VPAWVisualizeOCTButton.connect(
-            "clicked(bool)", self.onVPAWVisualizeOCTButton,
-        )
+        self.ui.HomeButton.connect("clicked(bool)", self.onHomeButton)
 
         self.ui.showButton.connect("clicked(bool)", self.onShowButton)
         self.ui.computeIsosurfacesButton.connect(
@@ -392,17 +388,17 @@ class VPAWVisualizeWidget(
         """
         slicer.util.selectModule("VPAWModel")
 
+    def onVPAWVisualizeButton(self):
+        """
+        Switch to the "VPAW Visualize" module when the user clicks the button.
+        """
+        slicer.util.selectModule("VPAWVisualize")
+
     def onVPAWModelOCTButton(self):
         """
         Switch to the "VPAW Model OCT" module when the user clicks the button.
         """
         slicer.util.selectModule("VPAWModelOCT")
-
-    def onVPAWVisualizeOCTButton(self):
-        """
-        Switch to the "VPAW Visualize OCT" module when the user clicks the button.
-        """
-        slicer.util.selectModule("VPAWVisualizeOCT")
 
     def onShowButton(self):
         """
@@ -465,7 +461,7 @@ class VPAWVisualizeWidget(
     def updateComputeIsosurfacesButtonEnabledness(self):
         """
         Enable or disable the compute isosurfaces button based on state of the
-        VPAWVisualizeLogic
+        VPAWVisualizeOCTLogic
         """
         if not self.logic.subjectIsCurrentlyLoaded():
             self.ui.computeIsosurfacesButton.setEnabled(False)
@@ -484,11 +480,11 @@ class VPAWVisualizeWidget(
 
 
 #
-# VPAWVisualizeLogic
+# VPAWVisualizeOCTLogic
 #
 
 
-class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
+class VPAWVisualizeOCTLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
     """
     This class should implement all the actual computation done by your module.  The
     interface should be such that other python code can import this class and make use
@@ -725,8 +721,8 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
 
     def clearSubject(self):
         """
-        Set VPAWVisualizeLogic to initial state before any subject was loaded, and clear
-        the subject hierarchy.
+        Set VPAWVisualizeOCTLogic to initial state before any subject was loaded, and
+        clear the subject hierarchy.
         """
         self.subject_id = None
         # subject hierarchy item id for the currently loaded subject
@@ -988,19 +984,6 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
         isosurface_values[0] += 0.02
         isosurface_values[-1] -= 0.02
 
-        laplace_isosurface_node = isosurfaces_from_volume(
-            self.laplace_sol_masked_node,
-            isosurface_values,
-            progress_callback=progress_callback,
-        )
-        laplace_isosurface_node.SetName(
-            f"{self.laplace_sol_node.GetName()}_isosurfaces",
-        )
-        laplace_isosurface_node.CreateDefaultDisplayNodes()
-        laplace_isosurface_node.GetDisplayNode().SetVisibility(True)
-        self.put_node_under_subject(laplace_isosurface_node)
-        self.laplace_isosurface_node = laplace_isosurface_node
-
     def isosurface_exists(self) -> bool:
         """
         Whether isosurface has already been computed
@@ -1013,11 +996,11 @@ class VPAWVisualizeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLog
 
 
 #
-# VPAWVisualizeTest
+# VPAWVisualizeOCTTest
 #
 
 
-class VPAWVisualizeTest(slicer.ScriptedLoadableModule.ScriptedLoadableModuleTest):
+class VPAWVisualizeOCTTest(slicer.ScriptedLoadableModule.ScriptedLoadableModuleTest):
     """
     This is the test case for your scripted module.  Uses ScriptedLoadableModuleTest
     base class, available at:
@@ -1036,9 +1019,9 @@ class VPAWVisualizeTest(slicer.ScriptedLoadableModule.ScriptedLoadableModuleTest
         Run as few or as many tests as needed here.
         """
         self.setUp()
-        self.test_VPAWVisualize1()
+        self.test_VPAWVisualizeOCT1()
 
-    def test_VPAWVisualize1(self):
+    def test_VPAWVisualizeOCT1(self):
         """
         Ideally we should have several levels of tests.  At the lowest level tests
         should exercise the functionality of the logic with different inputs (both valid
