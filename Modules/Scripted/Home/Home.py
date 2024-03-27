@@ -1,4 +1,5 @@
 import logging
+
 import qt
 import slicer
 import slicer.ScriptedLoadableModule
@@ -67,8 +68,12 @@ class HomeWidget(
         self.applyApplicationStyle()
 
         # Buttons
-        self.ui.VPAWVisualizeButton.connect("clicked(bool)", self.onVPAWVisualizeButton)
         self.ui.VPAWModelButton.connect("clicked(bool)", self.onVPAWModelButton)
+        self.ui.VPAWVisualizeButton.connect("clicked(bool)", self.onVPAWVisualizeButton)
+        self.ui.VPAWModelOCTButton.connect("clicked(bool)", self.onVPAWModelOCTButton)
+        self.ui.VPAWVisualizeOCTButton.connect(
+            "clicked(bool)", self.onVPAWVisualizeOCTButton,
+        )
 
     def setupNodes(self):
         # Set up the layout / 3D View
@@ -156,17 +161,29 @@ class HomeWidget(
             for widget in widgets:
                 widget.styleSheet = style
 
+    def onVPAWModelButton(self):
+        """
+        Switch to the "VPAW Model" module when the user clicks the button.
+        """
+        slicer.util.selectModule("VPAWModel")
+
     def onVPAWVisualizeButton(self):
         """
         Switch to the "VPAW Visualize" module when the user clicks the button.
         """
         slicer.util.selectModule("VPAWVisualize")
 
-    def onVPAWModelButton(self):
+    def onVPAWModelOCTButton(self):
         """
-        Switch to the "VPAW Model" module when the user clicks the button.
+        Switch to the "VPAW Model OCT" module when the user clicks the button.
         """
-        slicer.util.selectModule("VPAWModel")
+        slicer.util.selectModule("VPAWModelOCT")
+
+    def onVPAWVisualizeOCTButton(self):
+        """
+        Switch to the "VPAW Visualize OCT" module when the user clicks the button.
+        """
+        slicer.util.selectModule("VPAWVisualizeOCT")
 
 
 class HomeLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):

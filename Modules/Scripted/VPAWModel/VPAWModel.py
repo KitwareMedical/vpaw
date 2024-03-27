@@ -2,13 +2,14 @@ import importlib
 import logging
 import os
 import pathlib
+import sys
+import tempfile
+import time
+
 import qt
 import slicer
 import slicer.ScriptedLoadableModule
 import slicer.util
-import sys
-import tempfile
-import time
 
 
 class BusyCursor:
@@ -158,7 +159,7 @@ class VPAWModelWidget(
         self.ui.VPAWRootDirectory.connect(
             "currentPathChanged(const QString&)", self.updateQSettingsFromGUI,
         )
-        self.ui.VPAWModelsDirectory.connect(
+        self.ui.VPAWModelDirectory.connect(
             "currentPathChanged(const QString&)", self.updateQSettingsFromGUI,
         )
         self.ui.PatientPrefix.connect(
@@ -170,13 +171,18 @@ class VPAWModelWidget(
         self.ui.VPAWRootDirectory.connect(
             "validInputChanged(bool)", self.updateQSettingsFromGUI,
         )
-        self.ui.VPAWModelsDirectory.connect(
+        self.ui.VPAWModelDirectory.connect(
             "validInputChanged(bool)", self.updateQSettingsFromGUI,
         )
 
         # Buttons
-        self.ui.VPAWVisualizeButton.connect("clicked(bool)", self.onVPAWVisualizeButton)
         self.ui.HomeButton.connect("clicked(bool)", self.onHomeButton)
+        self.ui.VPAWVisualizeButton.connect("clicked(bool)", self.onVPAWVisualizeButton)
+        self.ui.VPAWModelOCTButton.connect("clicked(bool)", self.onVPAWModelOCTButton)
+        self.ui.VPAWVisualizeOCTButton.connect(
+            "clicked(bool)", self.onVPAWVisualizeOCTButton,
+        )
+
         self.ui.linkPediatricAirwayAtlasButton.connect(
             "clicked(bool)", self.onLinkPediatricAirwayAtlasButton,
         )
@@ -233,8 +239,8 @@ class VPAWModelWidget(
             "PediatricAirwayAtlasDirectory", "",
         )
         self.ui.VPAWRootDirectory.currentPath = qsettings.value("VPAWRootDirectory", "")
-        self.ui.VPAWModelsDirectory.currentPath = qsettings.value(
-            "VPAWModelsDirectory", "",
+        self.ui.VPAWModelDirectory.currentPath = qsettings.value(
+            "VPAWModelDirectory", "",
         )
         qsettings.endGroup()
 
@@ -263,14 +269,14 @@ class VPAWModelWidget(
             "Directory containing FilteredControlBlindingLogUniqueScanFiltered.xls,"
             + " images/*, and landmarks/*."
         )
-        self.ui.VPAWModelsDirectory.toolTip = (
+        self.ui.VPAWModelDirectory.toolTip = (
             "Directory containing file named like '116(158.10-38.AM.24.Mar).pth'"
         )
         self.ui.PatientPrefix.toolTip = (
             "Process only files with this prefix.  Blank means all files."
         )
         if os.path.isdir(self.ui.VPAWRootDirectory.currentPath) and os.path.isdir(
-            self.ui.VPAWModelsDirectory.currentPath,
+            self.ui.VPAWModelDirectory.currentPath,
         ):
             self.ui.runPediatricAirwayAtlasButton.toolTip = "Run Pediatric Airway Atlas"
             self.ui.runPediatricAirwayAtlasButton.enabled = True
@@ -311,7 +317,7 @@ class VPAWModelWidget(
             qsettings, "VPAWRootDirectory", self.ui.VPAWRootDirectory.currentPath,
         )
         self.setOrRemoveQSetting(
-            qsettings, "VPAWModelsDirectory", self.ui.VPAWModelsDirectory.currentPath,
+            qsettings, "VPAWModelDirectory", self.ui.VPAWModelDirectory.currentPath,
         )
         qsettings.endGroup()
 
@@ -332,6 +338,18 @@ class VPAWModelWidget(
         Switch to the "VPAW Visualize" module when the user clicks the button.
         """
         slicer.util.selectModule("VPAWVisualize")
+
+    def onVPAWModelOCTButton(self):
+        """
+        Switch to the "VPAW Model OCT" module when the user clicks the button.
+        """
+        slicer.util.selectModule("VPAWModelOCT")
+
+    def onVPAWVisualizeOCTButton(self):
+        """
+        Switch to the "VPAW Visualize OCT" module when the user clicks the button.
+        """
+        slicer.util.selectModule("VPAWVisualizeOCT")
 
     def onLinkPediatricAirwayAtlasButton(self):
         """
@@ -355,7 +373,7 @@ class VPAWModelWidget(
             This is the input/output directory, e.g., "path/to/vpaw-data-root".  It must
             contain FilteredControlBlindingLogUniqueScanFiltered.xls, images/*, and
             landmarks/*.
-        VPAWModelsDirectory :
+        VPAWModelDirectory :
             It must contain a file with name like "116(158.10-38.AM.24.Mar).pth".
         PatientPrefix :
             Process only files with this prefix.  Blank means all files.
@@ -368,7 +386,7 @@ class VPAWModelWidget(
             self.logic.runPediatricAirwayAtlas(
                 self.ui.PediatricAirwayAtlasDirectory.currentPath,
                 self.ui.VPAWRootDirectory.currentPath,
-                self.ui.VPAWModelsDirectory.currentPath,
+                self.ui.VPAWModelDirectory.currentPath,
                 self.ui.PatientPrefix.text,
             )
 
@@ -461,11 +479,27 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
             sys.path.insert(0, self.pediatric_airway_atlas_directory)
             importlib.invalidate_caches()
         try:
-            for module_name in ("conversion_utils.generate_pixel_space_landmarks",):
-                imported = importlib.import_module(module_name)
-        except:
+            for import_name in (
+                "alignment",
+                "band_depth",
+                "conversion_utils.generate_pixel_space_landmarks",
+                "cross_sections",
+                "file_utilities",
+                "general_utils",
+                "io_utils",
+                "itk_utils",
+                "laplace_solver",
+                "morphological_utils",
+                "multiprocessing_utils",
+                "segmentation.segmentation_inference",
+                "string_utils",
+                "visualize",
+                "weight_percentile",
+            ):
+                importlib.import_module(import_name)
+        except ImportError:
             slicer.util.errorDisplay(
-                f"Unable to find pediatric_airway_atlas/{module_name}\n"
+                f"Unable to find pediatric_airway_atlas.{import_name}\n"
                 + "Check the console for details.",
                 "Install Error",
             )
@@ -477,10 +511,10 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
             plural = "" if len(installed_modules) == 1 else "s"
             version_text = "\n".join(
                 [
-                    f"    {pip_install_name} version: {module.__version__}"
+                    f"    {install_name} version: {module.__version__}"
                     if hasattr(module, "__version__")
-                    else f"    {pip_install_name} version: unknown"
-                    for module_name, pip_install_name, module in installed_modules
+                    else f"    {install_name} version: unknown"
+                    for import_name, install_name, module in installed_modules
                 ],
             )
             slicer.util.infoDisplay(
@@ -490,17 +524,17 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
 
     def installAndImportDependencies(self):
         needs_installation = []
-        for module_name, pip_install_name in self.python_dependencies:
+        for import_name, install_name in self.python_dependencies:
             try:
-                importlib.import_module(module_name)
-            except ModuleNotFoundError as e1:
-                needs_installation.append((module_name, pip_install_name))
+                importlib.import_module(import_name)
+            except ModuleNotFoundError:
+                needs_installation.append((import_name, install_name))
         installed_modules = []
         if needs_installation:
             plural = "" if len(needs_installation) == 1 else "s"
             want_install = slicer.util.confirmYesNoDisplay(
                 f"Package{plural} not found: "
-                + ", ".join([module_name for module_name, _ in needs_installation])
+                + ", ".join([import_name for import_name, _ in needs_installation])
                 + f"\nInstall the package{plural}?",
                 "Missing Dependencies" if plural == "s" else "Missing Dependency",
             )
@@ -514,15 +548,15 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
                 with BusyCursor():
                     slicer.util.pip_install(["--upgrade", "pip", "setuptools", "wheel"])
                     slicer.util.pip_install(
-                        [pip_install_name for _, pip_install_name in needs_installation],
+                        [install_name for _, install_name in needs_installation],
                     )
                     installed_modules = [
                         (
-                            module_name,
-                            pip_install_name,
-                            importlib.import_module(module_name),
+                            import_name,
+                            install_name,
+                            importlib.import_module(import_name),
                         )
-                        for module_name, pip_install_name in needs_installation
+                        for import_name, install_name in needs_installation
                     ]
             except ModuleNotFoundError as e2:
                 slicer.util.errorDisplay(
@@ -545,7 +579,7 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
         self,
         pediatricAirwayAtlasDirectory,
         vPAWRootDirectory,
-        vPAWModelsDirectory,
+        vPAWModelDirectory,
         patientPrefix,
     ):
         """
@@ -560,17 +594,19 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
             This is the input/output directory, e.g., "path/to/vpaw-data-root".  It must
             contain FilteredControlBlindingLogUniqueScanFiltered.xls, images/*, and
             landmarks/*.
-        vPAWModelsDirectory : str
+        vPAWModelDirectory : str
             It must contain a file with name like "116(158.10-38.AM.24.Mar).pth".
         patientPrefix : str
             Process only files with this prefix.  Blank means all files.
         """
-        # If self.pediatric_airway_atlas is not yet set then see if we can set it.
+        # If self.pediatric_airway_atlas_directory is not yet set then see if we can set
+        # it.
         if not hasattr(self, "pediatric_airway_atlas_directory") and not (
             os.path.isdir(pediatricAirwayAtlasDirectory)
             and self.linkPediatricAirwayAtlas(pediatricAirwayAtlasDirectory)
         ):
-            # We don't have self.pediatric_airway_atlas and we couldn't get it.
+            # We don't have self.pediatric_airway_atlas_directory and we couldn't get
+            # it.
             return False
 
         startTime = time.time()
@@ -580,7 +616,7 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
         response = self.convertFCSVLandmarksToP3(
             vPAWRootDirectory, patientPrefix,
         ) and self.runSegmentation(
-            vPAWRootDirectory, vPAWModelsDirectory, patientPrefix,
+            vPAWRootDirectory, vPAWModelDirectory, patientPrefix,
         )
         if response:
             slicer.util.infoDisplay("The pipeline has completed", "Pipeline ran")
@@ -616,7 +652,7 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
                             f"--subject_prefix={subject_prefix}",
                         ],
                     )
-                except:
+                except Exception:
                     slicer.util.errorDisplay(
                         "The run failed.  It may be that a non-blank patient prefix is"
                         + " not supported by this version of pediatric_airway_atlas"
@@ -641,7 +677,7 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
             os.chdir(cwd)
         return True
 
-    def runSegmentation(self, vPAWRootDirectory, vPAWModelsDirectory, patientPrefix):
+    def runSegmentation(self, vPAWRootDirectory, vPAWModelDirectory, patientPrefix):
         cwd = os.getcwd()
         ConfigDescriptor, ConfigName = None, None
         SegmentDescriptor, SegmentName = None, None
@@ -702,13 +738,15 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
             # Add text to the configuration file for segmentation
             SegmentYaml = dict(
                 data_root_dir=vPAWRootDirectory,
-                model_save_directory=vPAWModelsDirectory,
+                model_save_directory=vPAWModelDirectory,
                 crop_size=[192, 192, 192],
                 network_model=dict(name="TwoStepSeparatedModel", params=dict()),
                 dataset=dict(
                     image_min_max_normalization=[-1024.0, 3071.0],
                     extra_keys_to_fetch=["image_spacing"],
-                    train_test_split_fpath="segmentation/train_test_split_new_with_spherical.yaml",
+                    train_test_split_fpath=(
+                        "segmentation/train_test_split_new_with_spherical.yaml"
+                    ),
                 ),
                 loss_type="ce",
                 loss_params=dict(pos_weight=[2.0], loss_multiplier=10.0),
@@ -739,7 +777,7 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
                             f"--subject_prefix={patientPrefix}",
                         ],
                     )
-                except:
+                except Exception:
                     slicer.util.errorDisplay(
                         "The run failed.  It may be that a non-blank patient prefix is"
                         + " not supported by this version of pediatric_airway_atlas"

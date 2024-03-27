@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>VPAWModel</class>
- <widget class="qMRMLWidget" name="VPAWModel">
+ <class>VPAWModelOCT</class>
+ <widget class="qMRMLWidget" name="VPAWModelOCT">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -12,15 +12,15 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QPushButton" name="HomeButton">
+    <widget class="QPushButton" name="VPAWModelButton">
      <property name="enabled">
       <bool>true</bool>
      </property>
      <property name="toolTip">
-      <string>Go to Home module</string>
+      <string>Go to VPAW Model module</string>
      </property>
      <property name="text">
-      <string>Go to Home module</string>
+      <string>Go to VPAW Model module</string>
      </property>
     </widget>
    </item>
@@ -38,15 +38,15 @@
     </widget>
    </item>
    <item>
-    <widget class="QPushButton" name="VPAWModelOCTButton">
+    <widget class="QPushButton" name="HomeButton">
      <property name="enabled">
       <bool>true</bool>
      </property>
      <property name="toolTip">
-      <string>Go to VPAW Model OCT module</string>
+      <string>Go to Home module</string>
      </property>
      <property name="text">
-      <string>Go to VPAW Model OCT module</string>
+      <string>Go to Home module</string>
      </property>
     </widget>
    </item>
@@ -64,38 +64,38 @@
     </widget>
    </item>
    <item>
-    <widget class="ctkCollapsibleButton" name="linkPediatricAirwayAtlasCollapsibleButton" native="true">
+    <widget class="ctkCollapsibleButton" name="linkOCTSegCollapsibleButton" native="true">
      <property name="text" stdset="0">
-      <string>VPAW Model: Link to Pediatric Airway Atlas Codebase</string>
+      <string>VPAW Model OCT: Link to OCT Segmentation Codebase</string>
      </property>
      <property name="collapsed" stdset="0">
       <bool>false</bool>
      </property>
-     <layout class="QFormLayout" name="linkPediatricAirwayAtlasFormLayout">
+     <layout class="QFormLayout" name="linkOCTSegFormLayout">
       <item row="0" column="0">
-       <widget class="QLabel" name="pediatricAirwayAtlasDirectoryLabel">
+       <widget class="QLabel" name="octSegDirectoryLabel">
         <property name="text">
-         <string>Pediatric Airway Atlas source directory</string>
+         <string>OCT Segmentation source directory</string>
         </property>
        </widget>
       </item>
       <item row="0" column="1">
-       <widget class="ctkPathLineEdit" name="PediatricAirwayAtlasDirectory">
+       <widget class="ctkPathLineEdit" name="OCTSegDirectory">
         <property name="filters">
          <set>ctkPathLineEdit::Dirs</set>
         </property>
        </widget>
       </item>
       <item row="1" column="0" colspan="2">
-       <widget class="QPushButton" name="linkPediatricAirwayAtlasButton">
+       <widget class="QPushButton" name="linkOCTSegButton">
         <property name="enabled">
          <bool>false</bool>
         </property>
         <property name="toolTip">
-         <string>Link to Pediatric Airway Atlas codebase and install dependencies</string>
+         <string>Link to OCT Segmentation codebase and install dependencies</string>
         </property>
         <property name="text">
-         <string>Link to Pediatric Airway Atlas codebase and install dependencies</string>
+         <string>Link to OCT Segmentation codebase and install dependencies</string>
         </property>
        </widget>
       </item>
@@ -103,59 +103,35 @@
     </widget>
    </item>
    <item>
-    <widget class="ctkCollapsibleButton" name="runPediatricAirwayAtlasCollapsibleButton">
+    <widget class="ctkCollapsibleButton" name="runOCTSegCollapsibleButton">
      <property name="text">
-      <string>VPAW Model: Run Pediatric Airway Atlas</string>
+      <string>VPAW Model OCT: Run OCT Segmentation</string>
      </property>
      <layout class="QFormLayout" name="formLayout_2">
       <item row="0" column="0">
-       <widget class="QLabel" name="VPAWRootDirectoryLabel">
+       <widget class="QLabel" name="VPAWOCTConfigFileLabel">
         <property name="text">
-         <string>Input/Output Root Directory</string>
+         <string>YAML Configuration File</string>
         </property>
        </widget>
       </item>
       <item row="0" column="1">
-       <widget class="ctkPathLineEdit" name="VPAWRootDirectory">
+       <widget class="ctkPathLineEdit" name="VPAWOCTConfigFile">
         <property name="filters">
-         <set>ctkPathLineEdit::Dirs</set>
+         <set>ctkPathLineEdit::Files</set>
         </property>
        </widget>
       </item>
-      <item row="1" column="0">
-       <widget class="QLabel" name="VPAWModelDirectoryLabel">
-        <property name="text">
-         <string>Models Directory</string>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="1">
-       <widget class="ctkPathLineEdit" name="VPAWModelDirectory">
-        <property name="filters">
-         <set>ctkPathLineEdit::Dirs</set>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="0">
-       <widget class="QLabel" name="patientPrefixLabel">
-        <property name="text">
-         <string>Patient prefix (optional)</string>
-        </property>
-       </widget>
-      </item>
-      <item row="2" column="1">
-       <widget class="QLineEdit" name="PatientPrefix"/>
-      </item>
-      <item row="3" column="0" colspan="2">
-       <widget class="QPushButton" name="runPediatricAirwayAtlasButton">
+      <item row="1" column="0" colspan="2">
+       <widget class="QPushButton" name="runOCTSegButton">
         <property name="enabled">
          <bool>false</bool>
         </property>
         <property name="toolTip">
-         <string>Run Pediatric Airway Atlas</string>
+         <string>Run OCT Segmentation</string>
         </property>
         <property name="text">
-         <string>Run Pediatric Airway Atlas</string>
+         <string>Run OCT Segmentation</string>
         </property>
        </widget>
       </item>

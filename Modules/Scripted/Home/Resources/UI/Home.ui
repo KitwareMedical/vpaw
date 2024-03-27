@@ -38,6 +38,32 @@
     </widget>
    </item>
    <item>
+    <widget class="QPushButton" name="VPAWModelOCTButton">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
+     <property name="toolTip">
+      <string>Go to VPAW Model OCT module</string>
+     </property>
+     <property name="text">
+      <string>Go to VPAW Model OCT module</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="VPAWVisualizeOCTButton">
+     <property name="enabled">
+      <bool>true</bool>
+     </property>
+     <property name="toolTip">
+      <string>Go to VPAW Visualize OCT module</string>
+     </property>
+     <property name="text">
+      <string>Go to VPAW Visualize OCT module</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <spacer name="verticalSpacer">
      <property name="orientation">
       <enum>Qt::Vertical</enum>
