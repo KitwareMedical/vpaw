@@ -429,7 +429,6 @@ class VPAWModelLogic(slicer.ScriptedLoadableModule.ScriptedLoadableModuleLogic):
             ("pandas", "pandas"),
             ("pydicom", "pydicom"),
             ("pyransac3d", "pyransac3d"),
-            ("pyrender", "pyrender"),
             ("pytorch_lightning", "pytorch_lightning"),
             ("rtree", "rtree"),
             ("ruffus", "ruffus"),
